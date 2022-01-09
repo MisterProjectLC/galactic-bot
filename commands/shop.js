@@ -59,7 +59,7 @@ var showShop = async (weapons, armors, page, msg, channel, requester) => {
         console.error('Failed to remove reactions.');
     }
 
-    await delay(1000);
+    await delay(30*1000);
     if (saved_messages.get_message('showShop', msg.id) !== null) {
         saved_messages.remove_message('showShop', msg.id);
         msg.reactions.removeAll();
@@ -135,15 +135,14 @@ var buyFromShop = async (com_args, msg) => {
     let item = shopIndex < weapons.length ? weapons[shopIndex] : armors[shopIndex];
     let cost = item.cost_per_level;
     let coins = 0;
-    await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [msg.author.id]).then(result => {
-        if (result.rowCount < 1) {
-            msg.reply(errors.unregisteredPlayer);
-            return;
-        }
 
-        coins = result.rows[0].coins;
-    });
+    let result = await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [msg.author.id]);
+    if (result.rowCount < 1) {
+        msg.reply(errors.unregisteredPlayer);
+        return;
+    }
 
+    coins = result.rows[0].coins;
     if (coins < cost*purchaseAmount) {
         msg.reply("You don't have enough coins for this item...");
         return;

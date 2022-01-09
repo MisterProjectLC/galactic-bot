@@ -19,53 +19,45 @@ module.exports.Battle = class {
         this.log = "**---BATTLE LOG---**\n";
     }
 
-    update_battle_status() {
-        let player = this.left_fighters[0];
-        let enemy = this.right_fighters[0];
-    
+    update_battle_status(fighters) {
+        let title_list = fighters.reduce((text, element) => {
+            text += element.title + "\n";
+        }, "");
+
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .addField(`**Combatant A**`, player.title, true)
-        .addField(`**Combatant B**`, enemy.title, true);
+        .setTitle(`**Combatants**`, title_list, true);
 
-        let display_health = (fighter) => {
+        if (fighters[0].image != null)
+            embed = embed.setThumbnail(fighters[0].image);
+
+        fighters.forEach((fighter) => {
             embed = embed
             .addField(`**${fighter.title}'s Health**`, `${healthbar(fighter.health, fighter.max_health)} ${fighter.health}/${fighter.max_health}`, false)
-            .addField(`**${fighter.title}'s Shields**`, `${healthbar(fighter.shield, fighter.max_shield)} ${fighter.shield}/${fighter.max_shield}`, false);
-        };
-
-        this.left_fighters.forEach(display_health);
-        this.right_fighters.forEach(display_health);
-
-        let display_stats = (fighter) => {
-            embed = embed.addField(`**${fighter.title}'s Stats**`, `Plate: ${fighter.plate}\nRegen: ${fighter.regen}\nEvasion: ${fighter.evasion}`, false);
-        };
-
-        this.left_fighters.forEach(display_stats);
-        this.right_fighters.forEach(display_stats);
-
-        let display_weapons = (fighter) => {
+            .addField(`**${fighter.title}'s Shields**`, `${healthbar(fighter.shield, fighter.max_shield)} ${fighter.shield}/${fighter.max_shield}`, false)
+            .addField(`**${fighter.title}'s Stats**`, `Plate: ${fighter.plate}\nRegen: ${fighter.regen}\nEvasion: ${fighter.evasion}`, false);
+        
             let weapon_list = "";
             fighter.weapons.forEach(weapon => {
                 weapon_list += `**${weapon.title}**\nDamage: ${weapon.damage}\nRate of Attack: ${weapon.rate} per turn\nEffect: ${weapon.effect !== null ? weapon.effect.title : "None"}\n`;
             });
-
             embed = embed.addField(`**${fighter.title}'s Weapons**`, weapon_list.length > 0 ? weapon_list : "-", true);
-        };
-
-        this.left_fighters.forEach(display_weapons);
-        this.right_fighters.forEach(display_weapons);
+        });
         
         return embed;
     }
     
     
-    async battle(battle_status, battle_log) {
+    async battle(channel) {
+        let left_battle_status = await channel.send(this.update_battle_status(this.left_fighters));
+        let right_battle_status = await channel.send(this.update_battle_status(this.right_fighters));
+        let battle_log = await channel.send(`**--BATTLE LOG--**`);
+
         let endgame = 0;
         while (true) {
             await delay(3000);
             this.rounds += 1;
-            this.round(battle_status, battle_log);
+            this.round(left_battle_status, right_battle_status, battle_log);
     
             endgame = 2;
             this.left_fighters.forEach(fighter => {
@@ -88,13 +80,14 @@ module.exports.Battle = class {
         return endgame == 1;
     }
     
-    round(battle_status, battle_log) {
+    round(left_battle_status, right_battle_status, battle_log) {
         console.log(`ROUND ${this.rounds}`);
         this.log += `**ROUND ${this.rounds}**\n`;
         this.side_round(this.left_fighters, this.right_fighters, battle_log);
         this.side_round(this.right_fighters, this.left_fighters, battle_log);
     
-        battle_status.edit(this.update_battle_status(this.left_fighters, this.right_fighters));
+        left_battle_status.edit(this.update_battle_status(this.left_fighters));
+        right_battle_status.edit(this.update_battle_status(this.right_fighters));
         battle_log.edit(this.log);
     }
     

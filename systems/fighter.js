@@ -1,6 +1,7 @@
 module.exports.Fighter = class {
-    constructor(title, health, shield, plate, regen, evasion, weapons) {
+    constructor(title, image, health, shield, plate, regen, evasion, weapons) {
         this.title = title;
+        this.image = image;
         this.max_health = health;
         this.health = health;
         this.max_shield = shield;

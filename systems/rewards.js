@@ -1,14 +1,17 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
+const cooldownControl = require('../utils/cooldownControl');
 
 var xpThreshold = (level) => {
     return 1000 * Math.pow(1.03, level-1);
 }
 
-var giveXP = async (user, xp, msg) => {
+var giveXP = async (user, xp, msg, command) => {
     await db.makeQuery(`SELECT xp, level FROM players WHERE userid = $1`, [user]).then(async result => {
         if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
+            if (command)
+                cooldownControl.resetCooldown(command, user.id);
             return;
         }
         
@@ -44,10 +47,12 @@ var giveXP = async (user, xp, msg) => {
     });
 }
 
-var giveCoins = async (user, coins, msg) => {
+var giveCoins = async (user, coins, msg, command) => {
     await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [user]).then(async result => {
         if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
+            if (command)
+                cooldownControl.resetCooldown(command, user.id);
             return;
         }
         msg.reply(`You have received ${coins} coins! You now have ${result.rows[0].coins+coins} coins.`);

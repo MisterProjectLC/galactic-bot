@@ -1,6 +1,7 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
 const encounter = require('../systems/encounter');
+const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
 
 // Exports
@@ -10,7 +11,7 @@ module.exports = {
     category: "Battle",
     description: "Take part in an adventure.",
     examples: ["#adventure Space Adventure: Take part in the 'Space Adventure' mission."],
-    min: 0, max: 5, cooldown: 300, cooldownMessage: "The spacecraft is loading fuel, wait {0} before starting the mission again.",
+    min: 0, max: 5, cooldown: 300, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
     execute: async (com_args, msg) => {
         let best_match = [];
         let best_score = 0;
@@ -30,6 +31,7 @@ module.exports = {
 
         m.delete();
         if (best_score < 0.5) {
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply(errors.invalidArgs);
             return;
         }
@@ -37,10 +39,12 @@ module.exports = {
         let result = await db.makeQuery(`SELECT * FROM players WHERE userid = $1`, [msg.author.id]);
         if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             return;
         }
         let player = result.rows[0];
         if (player.level < best_match.min_level) {
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply("You don't have enough levels to participate in this adventure...");
             return;
         }

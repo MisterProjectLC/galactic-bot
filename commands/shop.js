@@ -5,65 +5,26 @@ const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
 const { delay } = require('../utils/delay.js');
 
-const LIMIT_PER_PAGE = 6;
-
-var showShop = async (weapons, armors, page, msg, channel, requester) => {
+var showShop = async (weapons, armors, channel) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
-    .setTitle("The Shop");
+    .setTitle("The Shop")
+    .setDescription("*To read more information about an item, use #info <number>*");
 
-    if (msg === null)
-        msg = await channel.send(embed);
-
-    let lineCount = 0;
-    let i = page*LIMIT_PER_PAGE;
-
-    for (; i < weapons.length && lineCount < LIMIT_PER_PAGE; i++, lineCount++) {
-        embed = embed
-        .addField(`${lineCount+1}. ${weapons[i].title}`,
-            `Cost: ${weapons[i].cost_per_level}
-            Damage: ${weapons[i].damage_per_level}
-            Rate of Attack: ${weapons[i].rate}
-            Effect: ${weapons[i].effect_title !== null ? weapons[i].effect_title : "None"}
-            Min Level to buy: ${weapons[i].min_level}
-            Your level with this: ${weapons[i].level !== null ? weapons[i].level : 0}`, true);
+    let total_i = 1;
+    let text = '';
+    for (let i = 0; i < weapons.length; i++, total_i++) {
+        text += `**${total_i}. ${weapons[i].title}** \`${weapons[i].cost_per_level} coins\` - [LEVEL ${weapons[i].min_level}]\n`;
     }
-    i -= weapons.length;
+    embed = embed.addField(`WEAPONS`, text, false);
 
-    for (; i < armors.length && lineCount < LIMIT_PER_PAGE; i++, lineCount++) {
-        embed = embed
-        .addField(`${lineCount+1}. ${armors[i].title}`, 
-            `Cost: ${armors[i].cost_per_level}
-            Health: ${armors[i].health}
-            Shields: ${armors[i].shield}
-            Plate: ${armors[i].plate}
-            Regen: ${armors[i].regen}
-            Evasion: ${armors[i].evasion}
-            Resistance to Effect: ${armors[i].effect_title !== null ? armors[i].effect_title : "None"}
-            Min Level to buy: ${armors[i].min_level}
-            Your Level with this: ${armors[i].level !== null ? armors[i].level : 0}`, true);
+    text = '';
+    for (let i = 0; i < armors.length; i++, total_i++) {
+        text += `**${total_i}. ${armors[i].title}** \`${armors[i].cost_per_level} coins\` - [LEVEL ${armors[i].min_level}]\n`;
     }
+    embed = embed.addField(`ARMORS`, text, false);
 
-    saved_messages.add_message('showShop', msg.id, {weapons: weapons, armors: armors, page: page, msg: msg, requester: requester});
-    msg.edit(embed);
-    msg.react("◀️");
-    msg.react("▶️");
-
-    // Reactions
-    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(requester));
-    try {
-        for (const reaction of userReactions.values()) {
-            await reaction.users.remove(requester);
-        }
-    } catch (error) {
-        console.error('Failed to remove reactions.');
-    }
-
-    await delay(900*1000);
-    if (saved_messages.get_message('showShop', msg.id) != null) {
-        saved_messages.remove_message('showShop', msg.id);
-        msg.reactions.removeAll();
-    }
+    channel.send(embed);
 }
 
 
@@ -71,25 +32,17 @@ var checkShop = async (com_args, msg) => {
     let weapons = [];
     let armors = [];
 
-    let weapon_promise = db.makeQuery(`SELECT weapons.title, cost_per_level, damage_per_level, rate, min_level, effects.title as effect_title, 
-    playersWeapons.level
-    FROM (weapons LEFT OUTER JOIN effects ON weapons.effect = effects.id) 
-    LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
-    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]).then((result) => {
+    let weapon_promise = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true`).then((result) => {
         weapons = result.rows;
     });
 
-    let armor_promise = db.makeQuery(`SELECT armors.title, cost_per_level, health, shield, plate, regen, evasion, min_level, effects.title as effect_title, 
-    playersArmors.level
-    FROM (armors LEFT OUTER JOIN effects ON armors.effect = effects.id) 
-    LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
-    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]).then((result) => {
+    let armor_promise = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true`).then((result) => {
         armors = result.rows;
     });
 
     await Promise.all([weapon_promise, armor_promise]);
 
-    showShop(weapons, armors, 0, null, msg.channel, msg.author.id);
+    showShop(weapons, armors, msg.channel);
 }
 
 var buyFromShop = async (com_args, msg) => {
@@ -159,7 +112,6 @@ var buyFromShop = async (com_args, msg) => {
 }
 
 
-
 // Exports
 module.exports = {
     name: "shop",
@@ -181,24 +133,8 @@ module.exports = {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();
 
-        // Turn pages
-        let pkg = saved_messages.get_message('showShop', msg.id);
-        if (pkg) {
-            if (user.id !== pkg.msg.author.id)
-                return;
-
-            if (emoji === "◀️" && pkg.page > 0)
-                pkg.page -= 1;
-
-            else if (emoji === "▶️" && pkg.page < Math.floor((pkg.weapons.length + pkg.armors.length - 1)/LIMIT_PER_PAGE))
-                pkg.page += 1;
-            
-            showShop(pkg.weapons, pkg.armors, pkg.page, pkg.msg, pkg.msg.channel, pkg.requester);
-            return;
-        }
-
         // Confirm Purchase
-        pkg = saved_messages.get_message('confirmPurchase', msg.id);
+        let pkg = saved_messages.get_message('confirmPurchase', msg.id);
         if (pkg) {
             if (user.id !== pkg.msg.author.id)
                 return;

@@ -16,11 +16,7 @@ var checkCooldown = (command, msg) => {
         if (now < expirationTime) {
             const timeLeft = (expirationTime - now) / 1000;
             if (command.cooldownMessage)
-                try {
-                    msg.reply(command.cooldownMessage.format(timeFormatter(timeLeft.toFixed(1))));
-                } catch {
-                    msg.reply(`Please wait ${timeFormatter(timeLeft.toFixed(1))} before using this command again`);
-                }
+                msg.reply(command.cooldownMessage.replace( 'xxx', timeFormatter(timeLeft.toFixed(1)) ));
             else
                 msg.reply(`Please wait ${timeFormatter(timeLeft.toFixed(1))} before using this command again`);
             return false;

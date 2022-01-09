@@ -9,7 +9,7 @@ module.exports = {
     nickname: ["advs"],
     category: "Battle",
     description: "Check all available adventures.", 
-    min: 0, max: 0, cooldown: 1200,
+    min: 0, max: 0, cooldown: 5,
     execute: async (com_args, msg) => {
         // Check all adventures
         await db.makeQuery(`SELECT * FROM adventures`).then(async (result) => {

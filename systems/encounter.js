@@ -19,7 +19,7 @@ var generatePlayer = (player, player_weapons, player_armors) => {
         player.evasion += armor.evasion*armor.level;
     });
 
-    return new battle.Fighter(player.title, player.health, player.shield, player.plate, player.regen, player.evasion, 
+    return new battle.Fighter(player.title, player.image, player.health, player.shield, player.plate, player.regen, player.evasion, 
         player_weapons.map(player_weapon => {
             return new battle.Weapon(player_weapon.title, player_weapon.level*player_weapon.damage_per_level, player_weapon.rate, 
                 battle.effects.get_effect(player_weapon.effect_title, player_weapon.level))
@@ -29,7 +29,7 @@ var generatePlayer = (player, player_weapons, player_armors) => {
 
 
 var generateEnemy = (enemy) => {
-    return new battle.Fighter(enemy.title, enemy.health, enemy.shield, enemy.plate, enemy.regen, enemy.evasion, 
+    return new battle.Fighter(enemy.title, enemy.image_link, enemy.health, enemy.shield, enemy.plate, enemy.regen, enemy.evasion, 
         [new battle.Weapon(enemy.weapon_title, enemy.damage_per_level*enemy.weapon_level, 
             enemy.rate, battle.effects.get_effect(enemy.effect_title, enemy.weapon_level))
         ]);
@@ -38,10 +38,7 @@ var generateEnemy = (enemy) => {
 
 var generateBattle = async (combatantsA, combatantsB, msg) => {
     let instance = new battle.Battle(combatantsA, combatantsB); 
-
-    let battle_status = await msg.channel.send(instance.update_battle_status());
-    let battle_log = await msg.channel.send(`**--BATTLE LOG--**`);
-    return await instance.battle(battle_status, battle_log);
+    return await instance.battle(msg.channel);
 }
 
 
@@ -96,6 +93,7 @@ var generateEncounter = async (title, msg, enemy_infos, command) => {
     let result = await db.makeQuery(`SELECT * FROM ePlayers WHERE userid ilike $1`, [msg.author.id]);
     let player = result.rows[0];
     player.title = msg.member.displayName;
+    player.image = msg.author.avatarURL();
 
     let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
     WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [msg.author.id]);
@@ -105,8 +103,10 @@ var generateEncounter = async (title, msg, enemy_infos, command) => {
     let player_weapons = (await weapon_result).rows;
     let player_armors = (await armor_result).rows;
 
-    let weapon_msg = await buildListMessage(null, msg.channel, msg.author.id, "Weapon List", "Choose 2 weapons:", player_weapons, buildWeaponLine, 0, emojiNumbers.length);
-    let armor_msg = await buildListMessage(null, msg.channel, msg.author.id, "Armor List", "Choose 2 armors:", player_armors, buildArmorLine, 0, emojiNumbers.length);
+    let weapon_msg = await buildListMessage(null, msg.channel, msg.author.id, "Weapon List", "Choose 2 weapons:", 
+                                    player_weapons, buildWeaponLine, 0, emojiNumbers.length);
+    let armor_msg = await buildListMessage(null, msg.channel, msg.author.id, "Armor List", "Choose 2 armors:", 
+                                    player_armors, buildArmorLine, 0, emojiNumbers.length);
     await Promise.all([weapon_msg, armor_msg]);
 
     // Enemy
@@ -114,11 +114,13 @@ var generateEncounter = async (title, msg, enemy_infos, command) => {
     .setColor(0x1d51cc)
     .setTitle(title + " - Enemy List")
     .setFooter("Press ✅ when ready\nPress ❌ to cancel");
+
     enemy_infos.forEach(enemy => {
         embed = embed.addField(`**${enemy.title}**`, `HP: ${enemy.health}\nShields: ${enemy.shield}\nPlate: ${enemy.plate}
         Regen: ${enemy.regen}\nEvasion: ${enemy.evasion}\nDamage: ${enemy.damage_per_level*enemy.weapon_level}
         Attack Rate: ${enemy.rate} per turn\nEffect: ${enemy.effect_title != null ? enemy.effect_title : "None"}`, false);
     });
+
     let main_msg = await msg.channel.send(embed);
     main_msg.react('✅');
     main_msg.react('❌');
@@ -126,20 +128,16 @@ var generateEncounter = async (title, msg, enemy_infos, command) => {
     // Register messages
     saved_messages.add_message('encounterSetup', weapon_msg.id, main_msg.id);
     saved_messages.add_message('encounterSetup', armor_msg.id, main_msg.id);
-    saved_messages.add_message('encounterConfirm', main_msg.id, {caller_id: msg.author.id, original_command: command, original_msg: msg, removed: false,
+    saved_messages.add_message('encounterConfirm', main_msg.id, {caller_id: msg.author.id, original_command: command, original_msg: msg,
                                                     player: player, enemies: enemy_infos, msg: main_msg,
                                                     weapon_info: {list: player_weapons, selected: [], msg: weapon_msg, page: 0},
                                                     armor_info: {list:player_armors, selected: [], msg: armor_msg, page: 0}});
     
-    //await delay(1000*command.cooldown);
     await delay(1000*command.cooldown);
-    if (saved_messages.get_message('encounterConfirm', main_msg.id) != null || !saved_messages.get_message('encounterConfirm', main_msg.id).removed) {
+    if (saved_messages.get_message('encounterConfirm', main_msg.id) != null) {
         saved_messages.remove_message('encounterSetup', weapon_msg.id);
-        weapon_msg.delete();
         saved_messages.remove_message('encounterSetup', armor_msg.id);
-        armor_msg.delete();
         saved_messages.remove_message('encounterConfirm', main_msg.id);
-        main_msg.delete();
     }
 };
 
@@ -186,6 +184,16 @@ var confirmReaction = async (reaction, pkg) => {
     if (emoji !== '✅' && emoji !== '❌')
         return;
 
+    // Cleanup
+    if (saved_messages.get_message('encounterConfirm', pkg.msg.id) != null) {
+        pkg.weapon_info.msg.delete();
+        pkg.armor_info.msg.delete();
+        pkg.msg.delete();
+        saved_messages.remove_message('encounterSetup', pkg.weapon_info.msg.id);
+        saved_messages.remove_message('encounterSetup', pkg.armor_info.msg.id);
+        saved_messages.remove_message('encounterConfirm', pkg.msg.id);
+    }
+
     if (emoji === '❌') {
         cooldownControl.resetCooldown(pkg.original_command, pkg.original_msg.author.id);
         return;
@@ -215,13 +223,6 @@ var confirmReaction = async (reaction, pkg) => {
 
         rewards.giveXP(pkg.caller_id, xp_gained, pkg.original_msg);
     }
-
-    // Cleanup
-    pkg.removed = true;
-    saved_messages.add_message('encounterConfirm', pkg.msg.id, pkg);
-    saved_messages.remove_message('encounterSetup', pkg.weapon_info.msg.id);
-    saved_messages.remove_message('encounterSetup', pkg.armor_info.msg.id);
-    saved_messages.remove_message('encounterConfirm', pkg.msg.id);
 }
 
 

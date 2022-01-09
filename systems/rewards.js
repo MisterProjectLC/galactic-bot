@@ -53,7 +53,6 @@ var giveCoins = async (user, coins, msg) => {
         msg.reply(`You have received ${coins} coins! You now have ${result.rows[0].coins+coins} coins.`);
 
         await db.makeQuery(`UPDATE players SET coins = coins + $2 WHERE userid = $1`, [user, coins]);
-        
     });
 }
 

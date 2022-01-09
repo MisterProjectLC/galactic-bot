@@ -132,7 +132,7 @@ var buyFromShop = async (com_args, msg) => {
         return;
     }
 
-    let item = shopIndex < weapons.length ? weapons[shopIndex] : armors[shopIndex];
+    let item = shopIndex <= weapons.length ? weapons[shopIndex] : armors[shopIndex];
     let cost = item.cost_per_level;
     let coins = 0;
 

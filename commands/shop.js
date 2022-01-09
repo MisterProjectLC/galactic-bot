@@ -59,8 +59,8 @@ var showShop = async (weapons, armors, page, msg, channel, requester) => {
         console.error('Failed to remove reactions.');
     }
 
-    await delay(30*1000);
-    if (saved_messages.get_message('showShop', msg.id) !== null) {
+    await delay(900*1000);
+    if (saved_messages.get_message('showShop', msg.id) != null) {
         saved_messages.remove_message('showShop', msg.id);
         msg.reactions.removeAll();
     }
@@ -151,8 +151,8 @@ var buyFromShop = async (com_args, msg) => {
     m.react('❌');
     saved_messages.add_message('confirmPurchase', m.id, {item: item, purchaseAmount: purchaseAmount, msg: msg, isWeapon: (shopIndex < weapons.length)});
 
-    await delay(1000*30);
-    if (saved_messages.get_message('confirmPurchase', m.id) !== null) {
+    await delay(1000*900);
+    if (saved_messages.get_message('confirmPurchase', m.id) != null) {
         saved_messages.remove_message('confirmPurchase', m.id);
         m.reactions.removeAll();
     }
@@ -167,7 +167,7 @@ module.exports = {
     description: "Check the shop or buy/upgrade equipment.", 
     examples: ["#shop: Shows the list of all equipment available for purchase.",
     "#shop 10: buy/upgrade the 10th equipment in the shop.",
-    "#shop 5 3: buy 3 levels of the 3th equipment in the shop."],
+    "#shop 5 3: buy 3 levels of the 5th equipment in the shop."],
     min: 0, max: 1, cooldown: 2,
     execute: async (com_args, msg) => {
         if (com_args.length <= 0) {

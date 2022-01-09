@@ -133,7 +133,7 @@ var generateEncounter = async (title, msg, enemy_infos, command) => {
     
     //await delay(1000*command.cooldown);
     await delay(1000*command.cooldown);
-    if (saved_messages.get_message('encounterConfirm', main_msg.id) !== null) {
+    if (saved_messages.get_message('encounterConfirm', main_msg.id) != null || !saved_messages.get_message('encounterConfirm', main_msg.id).removed) {
         saved_messages.remove_message('encounterSetup', weapon_msg.id);
         weapon_msg.delete();
         saved_messages.remove_message('encounterSetup', armor_msg.id);
@@ -191,8 +191,6 @@ var confirmReaction = async (reaction, pkg) => {
         return;
     }
 
-    pkg.removed = true;
-
     // Player
     let player_weapons = pkg.weapon_info.list.filter((element, index) => {
         return pkg.weapon_info.selected.includes(index);
@@ -219,6 +217,8 @@ var confirmReaction = async (reaction, pkg) => {
     }
 
     // Cleanup
+    pkg.removed = true;
+    saved_messages.add_message('encounterConfirm', confirm_id, pkg);
     saved_messages.remove_message('encounterSetup', pkg.weapon_info.msg.id);
     pkg.weapon_info.msg.delete();
     saved_messages.remove_message('encounterSetup', pkg.armor_info.msg.id);

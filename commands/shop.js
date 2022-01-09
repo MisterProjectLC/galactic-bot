@@ -149,7 +149,7 @@ var buyFromShop = async (com_args, msg) => {
     let m = await msg.reply(`Confirm purchase of ${purchaseAmount} Level(s) of ${item.title}? This will cost ${item.cost_per_level*purchaseAmount} coins.`);
     m.react('✅');
     m.react('❌');
-    saved_messages.add_message('confirmPurchase', m.id, {item: item, purchaseAmount: purchaseAmount, msg: msg});
+    saved_messages.add_message('confirmPurchase', m.id, {item: item, purchaseAmount: purchaseAmount, msg: msg, isWeapon: (shopIndex < weapons.length)});
 
     await delay(1000*30);
     if (saved_messages.get_message('confirmPurchase', m.id) !== null) {
@@ -213,12 +213,13 @@ module.exports = {
             msg.edit("Purchase confirmed!");
             
             db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [msg.author.id, pkg.cost]);
-            if (pkg.item.damage_per_level !== undefined) {
+            if (pkg.isWeapon) {
                 db.makeQuery(`SELECT buy_weapon($1, $2)`, [user.id, pkg.item.title]);
                 console.log("Weapon bought!");
-            } else
+            } else {
                 db.makeQuery(`SELECT buy_armor($1, $2)`, [user.id, pkg.item.title]);
                 console.log("Armor bought!");
+            }
             return;
         }
 

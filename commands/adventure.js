@@ -36,7 +36,7 @@ module.exports = {
 
         let result = await db.makeQuery(`SELECT * FROM players WHERE userid = $1`, [msg.author.id]);
         if (result.rowCount < 1) {
-            msg.reply(unregisteredPlayer);
+            msg.reply(errors.unregisteredPlayer);
             return;
         }
         let player = result.rows[0];

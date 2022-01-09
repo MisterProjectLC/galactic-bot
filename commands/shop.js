@@ -113,21 +113,19 @@ var buyFromShop = async (com_args, msg) => {
     let armors = [];
 
     // Check if item exists
-    let weapon_promise = db.makeQuery(`SELECT weapons.title, cost_per_level, level
+    let result = await db.makeQuery(`SELECT weapons.title, cost_per_level, level
     FROM weapons LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
-    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]).then((result) => {
-        weapons = result.rows;
-    });
+    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]);
+    weapons = result.rows;
 
-    let armor_promise = db.makeQuery(`SELECT armors.title, cost_per_level, level
+    result = await db.makeQuery(`SELECT armors.title, cost_per_level, level
     FROM armors LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
-    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]).then((result) => {
-        armors = result.rows;
-    });
+    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]);
+    armors = result.rows;
 
-    await Promise.all([weapon_promise, armor_promise]);
+    //await Promise.all([weapon_promise, armor_promise]);
 
-    if (shopIndex >= weapons.length + armors.length) {
+    if (shopIndex >= weapons.length + armors.length || shopIndex < 0) {
         msg.reply(errors.invalidArgs);
         return;
     }

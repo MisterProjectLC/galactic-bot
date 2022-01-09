@@ -213,11 +213,12 @@ module.exports = {
             msg.edit("Purchase confirmed!");
             
             db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [msg.author.id, pkg.cost]);
-            if (pkg.item.damage_per_level !== null) {
+            if (pkg.item.damage_per_level !== undefined) {
                 db.makeQuery(`SELECT buy_weapon($1, $2)`, [user.id, pkg.item.title]);
                 console.log("Weapon bought!");
             } else
                 db.makeQuery(`SELECT buy_armor($1, $2)`, [user.id, pkg.item.title]);
+                console.log("Armor bought!");
             return;
         }
 

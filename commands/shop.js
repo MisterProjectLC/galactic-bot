@@ -134,7 +134,7 @@ var buyFromShop = async (com_args, msg) => {
     let cost = item.cost_per_level;
     let coins = 0;
 
-    let result = await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [msg.author.id]);
+    result = await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [msg.author.id]);
     if (result.rowCount < 1) {
         msg.reply(errors.unregisteredPlayer);
         return;

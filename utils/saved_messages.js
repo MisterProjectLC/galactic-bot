@@ -1,18 +1,18 @@
 confirmationMessages = {};
 
-const add_message = (index, package) => {
-    if (confirmationMessages[index])
-        confirmationMessages[index].push(package);
-    else
-        confirmationMessages[index] = [package];
+const add_message = (category, index, pkg) => {
+    if (!confirmationMessages[category])
+        confirmationMessages[category] = {};
+
+    confirmationMessages[category][index] = pkg;
 }
 
-const remove_message = (index) => {
-    delete confirmationMessages[index];
+const remove_message = (category, index) => {
+    delete confirmationMessages[category][index];
 }
 
-const get_message = (index) => {
-    return confirmationMessages[index];
+const get_message = (category, index) => {
+    return confirmationMessages[category] ? confirmationMessages[category][index] : null;
 }
 
 module.exports.add_message = add_message;

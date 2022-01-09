@@ -1,4 +1,4 @@
-const message_break = require('../utils/message_break').message_break;
+const timeFormatter = require('../utils/timeFormatter').timeFormatter;
 const Discord = require('discord.js');
 
 help_formatting = (command) => {
@@ -13,7 +13,7 @@ help_formatting = (command) => {
 	    embedResponse = embedResponse.addField(`Nicknames:`, `\`\`\`${command.nicknames.join(", ")}\`\`\``, true);
 
     if (command.cooldown != null)
-        embedResponse = embedResponse.addField(`Cooldown:`, `\`\`\`${command.cooldown}\`\`\``, true);
+        embedResponse = embedResponse.addField(`Cooldown:`, `\`\`\`${timeFormatter(command.cooldown)}\`\`\``, true);
 
     if (command.description != null)
 	    embedResponse = embedResponse.addField(`Description:`, `\`\`\`${command.description}\`\`\``, false);
@@ -24,7 +24,7 @@ help_formatting = (command) => {
     if (command.details != null)
 	    embedResponse = embedResponse.addField(`Usage details:`, `\`\`\`${command.details.join("\n")}\`\`\``, false);
 
-	return(embedResponse);
+	return embedResponse;
 };
 
 complete_list = (command_list) => {
@@ -48,9 +48,6 @@ complete_list = (command_list) => {
     }
 
     return embed;
-
-
-
 }
 
 var name = "help";
@@ -61,18 +58,9 @@ module.exports = {
     category: "General",
     description: "Provides a list of all available commands or details about a specific command.", 
     examples: ["#help: Provides a list of all available commands.", 
-    "#help adventure: providencia details about the command named 'adventure'."],
-    min: 1, max: 2, cooldown: 1,
+    "#help adventure: provides details about the command named 'adventure'."],
+    min: 0, max: 1, cooldown: 1,
     execute: async (com_args, msg) => {
-        // Purge 'ajuda'
-        for (let i = 0; i < com_args.length; i++) {
-            let name_index = com_args.findIndex(element => element == name);
-            if (name_index != -1) {
-                com_args.splice(name_index, 1);
-                break;
-            }
-        }
-
         let commandList = {"General":[]};
         let requested_command = null;
         const { commands } = msg.client;
@@ -81,7 +69,7 @@ module.exports = {
             if (!command.permission(msg))
                 return;
 
-            if (com_args.includes(command.name) && requested_command === null)
+            if (com_args[0] == command.name && requested_command === null)
                 requested_command = command;
             
             if (command.category) {

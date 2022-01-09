@@ -5,9 +5,9 @@ module.exports = {
     name: "weekly",
     category: "Rewards",
     description: "Reclaim your weekly reward.", 
-    min: 0, max: 0, cooldown: 86400,
+    min: 0, max: 0, cooldown: 604800,
     execute: async (com_args, msg) => {
-        rewards.giveCoins(msg.author.id, 100, msg);
+        rewards.giveCoins(msg.author.id, 500, msg);
     }, 
     permission: (msg) => true
 };

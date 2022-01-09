@@ -1,11 +1,11 @@
 const errors = require('../data/errors');
 
 const checkCommand = (command, args) => {
-    let lowercase_args = args.map(arg => {return arg.toLowerCase();});
+    let lowercaseArg = args[0];
 
     // Check command
-    if (!lowercase_args.includes(command.name))
-        if (!command.nicknames || !command.nicknames.some(element => lowercase_args.includes(element)))
+    if (!(lowercaseArg == command.name))
+        if (!command.nicknames || !command.nicknames.some(element => lowercaseArg == element))
             return false;
     
 

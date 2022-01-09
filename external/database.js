@@ -17,6 +17,8 @@ async function connectDB() {
 }
 
 async function makeQuery(query, values = []) {
+    console.assert(Array.isArray(values), "Query values must be an array");
+
     return await pg_client.query(query, values);
 }
 

@@ -28,20 +28,15 @@ const db = require('./external/database.js');
 const argumentParser = require('./utils/argumentParser.js').argumentParser;
 const checkCommand = require('./utils/checkCommand.js').checkCommand;
 const checkArgs = require('./utils/checkArgs.js').checkArgs;
+const checkCooldown = require('./utils/cooldownControl').checkCooldown;
 const errors = require('./data/errors.js');
+const {initializePeriodic} = require('./systems/periodicFunctions');
 
 // Comandos
 const prefixes = config.prefixes;
 Client.commands = new Discord.Collection();
 
-const usageCooldowns = new Discord.Collection();
-
 var channels = {};
-
-
-const periodic_function = async () => {
-    setTimeout(periodic_function, 60 * 1000);
-};
 
 
 // Gera os comandos - créditos para Marcus Vinicius Natrielli Garcia
@@ -93,10 +88,10 @@ Client.on("message", msg => {
             return;
         
         found = true;
-        if (!checkArgs(command, args, quoted_list, msg))
+        if (!(checkArgs(command, args, msg) && checkCooldown(command, msg)))
             return;
 
-        command.execute(args, msg, quoted_list, Client);
+        command.execute(args.slice(1), msg, quoted_list, Client);
     })
 
     if (found)
@@ -118,5 +113,4 @@ Client.on("messageReactionAdd", (reaction, user) => {
 })
 
 Client.login(token);
-
-setTimeout(periodic_function, 10 * 1000);
+initializePeriodic();

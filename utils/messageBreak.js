@@ -1,4 +1,4 @@
-const message_break = (lines, error_msg) => {
+const messageBreak = (lines, error_msg) => {
     let messages = [];
 
     if (lines.length == 0)
@@ -22,4 +22,4 @@ const message_break = (lines, error_msg) => {
 }
 
 // Exports
-module.exports.message_break = message_break;
+module.exports.messageBreak = messageBreak;

@@ -1,48 +1,59 @@
 const db = require('../external/database.js');
-const battle = require('../systems/battle');
-const Discord = require('discord.js');
+const errors = require('../data/errors');
+const encounter = require('../systems/encounter');
+const compareTwoStrings = require('string-similarity').compareTwoStrings;
 
 // Exports
 module.exports = {
     name: "adventure", 
     nickname: ["adv"],
-    category: "General",
-    description: "Check all available adventures or take part in one of them.", 
-    min: 0, max: 1, cooldown: 1200,
-    execute: async (com_args, msg, quoted_list, client) => {
-        // Check all adventures
-        if (com_args.length == 0) {
-            await db.makeQuery(`SELECT id, title FROM adventures`).then((result) => {
-                let embed = new Discord.MessageEmbed()
-                .setColor(0x1d51cc)
-                .setAuthor(msg.member.displayName)
-                .setTitle("Adventures");
+    category: "Battle",
+    description: "Take part in an adventure.",
+    examples: ["#adventure Space Adventure: Take part in the 'Space Adventure' mission."],
+    min: 0, max: 5, cooldown: 300, cooldownMessage: "The spacecraft is loading fuel, wait {0} before starting the mission again.",
+    execute: async (com_args, msg) => {
+        let best_match = [];
+        let best_score = 0;
 
-                let list = "";
-                result.rows.forEach(async (row) => {
-                    let minXP = 0, maxXP = 0, minCoins = 0, maxCoins = 0;
-                    await db.makeQuery(`SELECT MIN(given_xp) as minXP, MAX(given_xp) as maxXP, MIN(given_coins) as minCoins, MAX(given_coins) as maxCoins 
-                    FROM enemies INNER JOIN enemiesAdventures ON (enemies.id = enemiesAdventures.enemy_id)
-                    GROUP BY adventure_id HAVING (adventure_id = $1)`, [row.id]).then((xp_result) => {
-                        if (xp_result.rowCount > 0) {
-                            minXP = xp_result.rows[0].minXP;
-                            maxXP = xp_result.rows[0].maxXP;
-                            minCoins = xp_result.rows[0].minCoins;
-                            maxCoins = xp_result.rows[0].maxCoins;
-                        }
-                    });
-                    if (maxXP == 0)
-                        return;
+        let m = await msg.reply("Loading...");
+        await db.makeQuery(`SELECT * FROM adventures`).then((result) => {
+            result.rows.forEach(row => {
+                let lower_arg = com_args.join(" ").toLowerCase();
+                let lower_title = row.title.toLowerCase();
+                let score = compareTwoStrings(lower_arg, lower_title);
+                if (score > best_score) {
+                    best_match = row;
+                    best_score = score;
+                }
+            });            
+        });
 
-                    embed = embed.addField(row.title, `XP: ${minXP}-${maxXP}\nCoins: ${minCoins}-${maxCoins}`, true);
-                });
-                msg.edit(embed);
-            });
+        m.delete();
+        if (best_score < 0.5) {
+            msg.reply(errors.invalidArgs);
+            return;
         }
 
+        let result = await db.makeQuery(`SELECT * FROM players WHERE userid = $1`, [msg.author.id]);
+        if (result.rowCount < 1) {
+            msg.reply(unregisteredPlayer);
+            return;
+        }
+        let player = result.rows[0];
+        if (player.level < best_match.min_level) {
+            msg.reply("You don't have enough levels to participate in this adventure...");
+            return;
+        }
 
+        result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
+        WHERE enemiesAdventures.adventure_id = $1`, [best_match.id]);
 
+        encounter.generateEncounter(best_match.title, msg, result.rows, module.exports);
+    },
 
-    }, 
+    reaction: async (reaction, user) => {
+        encounter.onReaction(reaction, user);
+    },
+
     permission: (msg) => true
 };

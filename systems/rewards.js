@@ -1,26 +1,59 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
 
-var giveXP = (user, xp, msg) => {
-    await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE user`, [user]).then((response) => {
-        let thisPlayer = response.rows[0];
-        if (!thisPlayer)
+var xpThreshold = (level) => {
+    return 1000 * Math.pow(1.03, level-1);
+}
+
+var giveXP = async (user, xp, msg) => {
+    await db.makeQuery(`SELECT xp, level FROM players WHERE userid = $1`, [user]).then(async result => {
+        if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
-        else {
-            msg.reply(thisJogador.username + ": " + thisJogador.time_nome + ", " + thisJogador.cargo + ". Recursos: " + thisJogador.recursos);
+            return;
         }
+        
+        let newXP = result.rows[0].xp+xp;
+        let level = result.rows[0].level;
+        let threshold = xpThreshold(level);   
+        let levelup = false;
+
+        if (level >= 100) {
+            return;
+        }
+
+        while (newXP > threshold) {
+            newXP -= threshold;
+            level += 1;
+            levelup = true;
+            console.log(`LEVEL UP ${level}`);
+            if (level >= 100) {
+                msg.reply(`CONGRATULATIONS! You have achieved Level ${level}!`);
+                db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [user, (new Date().getTime())]);
+                break;
+
+            } else {
+                threshold = xpThreshold(level);
+                msg.reply(`You have leveled up! You are now at Level ${level}.`);
+            }
+        }
+
+        if (!levelup)
+            msg.reply(`You have received ${xp}XP! You now have ${newXP}XP.`);
+        
+        await db.makeQuery(`UPDATE players SET xp = $2, level = $3 WHERE userid = $1`, [user, newXP, level]);
     });
 }
 
-var giveCoins = (user, coins, msg) => {
-    await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE user`, [user]).then((response) => {
-        let thisPlayer = response.rows[0];
-        if (!thisPlayer)
+var giveCoins = async (user, coins, msg) => {
+    await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [user]).then(async result => {
+        if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
-        else {
-            await db.makeQuery(`UPDATE players SET coins = coins + $2 WHERE $1 ILIKE user`, [user, coins]);
-            msg.reply(`You have gained ${coins} coins!`);
+            return;
         }
+        msg.reply(`You have received ${coins} coins! You now have ${result.rows[0].coins+coins} coins.`);
+
+        await db.makeQuery(`UPDATE players SET coins = coins + $2 WHERE userid = $1`, [user, coins]);
+        
     });
 }
 

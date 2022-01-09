@@ -130,7 +130,7 @@ var buyFromShop = async (com_args, msg) => {
         return;
     }
 
-    let item = shopIndex <= weapons.length ? weapons[shopIndex] : armors[shopIndex-weapons.length];
+    let item = (shopIndex < weapons.length ? weapons[shopIndex] : armors[shopIndex-weapons.length]);
     let cost = item.cost_per_level;
     let coins = 0;
 
@@ -205,10 +205,12 @@ module.exports = {
             
             msg.reactions.removeAll();
             saved_messages.remove_message('confirmPurchase', msg.id);
-            msg.edit("Purchase confirmed!");
 
-            if (emoji !== "✅") 
+            if (emoji !== "✅") {
+                msg.edit("Purchase cancelled.");
                 return;
+            }
+            msg.edit("Purchase confirmed!");
             
             db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [msg.author.id, pkg.cost]);
             if (pkg.item.damage_per_level !== null) {

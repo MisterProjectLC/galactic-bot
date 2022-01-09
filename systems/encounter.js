@@ -218,7 +218,7 @@ var confirmReaction = async (reaction, pkg) => {
 
     // Cleanup
     pkg.removed = true;
-    saved_messages.add_message('encounterConfirm', confirm_id, pkg);
+    saved_messages.add_message('encounterConfirm', pkg.msg.id, pkg);
     saved_messages.remove_message('encounterSetup', pkg.weapon_info.msg.id);
     pkg.weapon_info.msg.delete();
     saved_messages.remove_message('encounterSetup', pkg.armor_info.msg.id);

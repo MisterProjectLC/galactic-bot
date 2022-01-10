@@ -1,4 +1,3 @@
-const rewards = require('../systems/rewards');
 const db = require('../external/database.js');
 const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
@@ -32,15 +31,11 @@ var checkShop = async (com_args, msg) => {
     let weapons = [];
     let armors = [];
 
-    let weapon_promise = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true`).then((result) => {
-        weapons = result.rows;
-    });
+    let result = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title`);
+    weapons = result.rows;
 
-    let armor_promise = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true`).then((result) => {
-        armors = result.rows;
-    });
-
-    await Promise.all([weapon_promise, armor_promise]);
+    result = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title`);
+    armors = result.rows;
 
     showShop(weapons, armors, msg.channel);
 }
@@ -68,12 +63,12 @@ var buyFromShop = async (com_args, msg) => {
     // Check if item exists
     let result = await db.makeQuery(`SELECT weapons.title, cost_per_level, level
     FROM weapons LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
-    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]);
+    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, weapons.title`, [msg.author.id]);
     weapons = result.rows;
 
-    result = await db.makeQuery(`SELECT armors.title, cost_per_level, level
+    result = await db.makeQuery(`SELECT title, cost_per_level, level
     FROM armors LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
-    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true`, [msg.author.id]);
+    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, armors.title`, [msg.author.id]);
     armors = result.rows;
 
     //await Promise.all([weapon_promise, armor_promise]);

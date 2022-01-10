@@ -1,9 +1,8 @@
 const errors = require('../data/errors');
-const Discord = require('discord.js');
 
 const checkArgs = (command, args, msg) => {
     // Check args
-    if (command.min && !(command.min <= args.length)) {
+    if (command.min && !(command.min < args.length)) {
         msg.reply(errors.invalidArgs);
         return false;
     }

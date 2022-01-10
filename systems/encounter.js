@@ -5,24 +5,25 @@ const Discord = require('discord.js');
 const rewards = require('../systems/rewards');
 const cooldownControl = require('../utils/cooldownControl');
 const { delay } = require('../utils/delay.js');
-
+const {asyncForEach} = require('../utils/asyncForEach');
+const {capitalize} = require('../utils/capitalize');
 
 const emojiNumbers = ['0️⃣', '1️⃣', '2️⃣', '3️⃣'];//, '4️⃣']; 
                     //'5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
 
-var generatePlayer = (player, player_weapons, player_armors) => {
-    player_armors.forEach(armor => {
-        player.health += armor.health*armor.level;
-        player.shield += armor.shield*armor.level;
-        player.plate += armor.plate*armor.level;
-        player.regen += armor.regen*armor.level;
-        player.evasion += armor.evasion*armor.level;
+var generatePlayer = (player) => {
+    player.armors.list.forEach(armor => {
+        player.info.health += armor.health*armor.level;
+        player.info.shield += armor.shield*armor.level;
+        player.info.plate += armor.plate*armor.level;
+        player.info.regen += armor.regen*armor.level;
+        player.info.evasion += armor.evasion*armor.level;
     });
 
-    return new battle.Fighter(player.title, player.image, player.health, player.shield, player.plate, player.regen, player.evasion, 
-        player_weapons.map(player_weapon => {
-            return new battle.Weapon(player_weapon.title, player_weapon.level*player_weapon.damage_per_level, player_weapon.rate, 
-                battle.effects.get_effect(player_weapon.effect_title, player_weapon.level))
+    return new battle.Fighter(player.info.title, player.info.image, player.info.health, player.info.shield, player.info.plate, 
+        player.info.regen, player.info.evasion, player.weapons.list.map(weapon => {
+            return new battle.Weapon(weapon.title, weapon.level*weapon.damage_per_level, weapon.rate, 
+                battle.effects.get_effect(weapon.effect_title, weapon.level))
         })
     );
 };
@@ -42,17 +43,86 @@ var generateBattle = async (combatantsA, combatantsB, msg) => {
 }
 
 
+var generateEncounter = async (title, msg, command, playerIDs, enemyInfos) => {
+    // Players + Create weapons/armor messages
+    let players = [];
+    await asyncForEach(playerIDs, async playerID => {
+        let playerInfo = db.makeQuery(`SELECT * FROM ePlayers WHERE userid ilike $1`, [playerID]);
+        let playerWeapons = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
+        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [playerID]);
+        let playerArmors = db.makeQuery(`SELECT * FROM playersArmors, eArmors
+        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND armor_id = eArmors.id`, [playerID]);
+
+        playerInfo = (await playerInfo).rows[0];
+        playerWeapons = (await playerWeapons).rows;
+        playerArmors = (await playerArmors).rows;
+
+        let weaponMsg = await buildListMessage(null, msg.channel, playerID, "Weapon List", "Choose 2 weapons:",
+        playerWeapons, buildWeaponLine, 0, emojiNumbers.length);
+        
+        let armorMsg = await buildListMessage(null, msg.channel, playerID, "Armor List", "Choose 2 armors:",
+        playerArmors, buildArmorLine, 0, emojiNumbers.length);
+
+        players.push({info:playerInfo, 
+            weapons:{list: playerWeapons, selected: [], msg: weaponMsg, page: 0}, 
+            armors:{list: playerArmors, selected: [], msg: armorMsg, page: 0}
+        });
+    });
+
+    // Enemy
+    let embed = new Discord.MessageEmbed()
+    .setColor(0x1d51cc)
+    .setTitle(title + " - Enemy List")
+    .setFooter("Press ✅ when ready\nPress ❌ to cancel");
+
+    enemyInfos.forEach(enemy => {
+        embed = embed.addField(`**${enemy.title}**`, `HP: ${enemy.health}\nShields: ${enemy.shield}\nPlate: ${enemy.plate}
+        Regen: ${enemy.regen}\nEvasion: ${enemy.evasion}\nDamage: ${enemy.damage_per_level*enemy.weapon_level}
+        Attack Rate: ${enemy.rate} per turn\nEffect: ${enemy.effect_title != null ? capitalize(enemy.effect_title) : "None"}`, false);
+    });
+
+    // Create summary message
+    let mainMsg = await msg.channel.send(embed);
+    mainMsg.react('✅');
+    mainMsg.react('❌');
+
+    // Register messages
+    players.forEach(player => {
+        saved_messages.add_message('encounterPlayer', player.weapons.msg.id, mainMsg.id);    
+    });
+    players.forEach(player => {
+        saved_messages.add_message('encounterPlayer', player.armors.msg.id, mainMsg.id);
+    });
+
+    saved_messages.add_message('encounterMain', mainMsg.id, {callerID: msg.author.id, originalCommand: command, originalMsg: msg,
+        players: players, enemies: enemyInfos, msg: mainMsg});
+    
+    // Cleanup messages
+    await delay(1000*command.cooldown);
+    if (saved_messages.get_message('encounterMain', mainMsg.id) != null) {
+        players.forEach(player => {
+            saved_messages.remove_message('encounterPlayer', player.weapons.msg.id);    
+        });
+        players.forEach(player => {
+            saved_messages.remove_message('encounterPlayer', player.armors.msg.id); 
+        });
+
+        saved_messages.remove_message('encounterMain', mainMsg.id);
+    }
+};
+
+
 var buildWeaponLine = (weapon) => {
-    return `${weapon.damage_per_level*weapon.level} DMG, ${weapon.rate} attack(s) per turn, Effect: ${weapon.effect_title !== null ? weapon.effect_title : "None"}`;
+    return `${weapon.damage_per_level*weapon.level} DMG, ${weapon.rate} attack(s) per turn, Effect: ${weapon.effect_title !== null ? capitalize(weapon.effect_title) : "None"}`;
 }
 
 var buildArmorLine = (armor) => {
     return `${armor.health*armor.level} HP, ${armor.shield*armor.level} Shields, ${armor.plate*armor.level} Plate, ` +
-    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion, Resistant to Effect: ${armor.effect_title !== null ? armor.effect_title : "None"}`;
+    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion, Resistant to Effect: ${armor.effect_title !== null ? capitalize(armor.effect_title) : "None"}`;
 }
 
 
-var buildListMessage = async (msg, channel, requester_id, title, description, list, lineBuilder, min, max, selected = []) => {
+var buildListMessage = async (msg, channel, playerID, title, description, list, lineBuilder, min, max, selected = []) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle(`**${title}**`)
@@ -68,10 +138,10 @@ var buildListMessage = async (msg, channel, requester_id, title, description, li
     }
     
     // Reactions
-    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(requester_id));
+    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(playerID));
     try {
         for (const reaction of userReactions.values()) {
-            await reaction.users.remove(requester_id);
+            await reaction.users.remove(playerID);
         }
     } catch (error) {
         console.error('Failed to remove reactions.');
@@ -88,62 +158,9 @@ var buildListMessage = async (msg, channel, requester_id, title, description, li
 }
 
 
-var generateEncounter = async (title, msg, enemy_infos, command) => {
-    // Player
-    let result = await db.makeQuery(`SELECT * FROM ePlayers WHERE userid ilike $1`, [msg.author.id]);
-    let player = result.rows[0];
-    player.image = msg.author.avatarURL();
-
-    let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
-    WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [msg.author.id]);
-    let armor_result = db.makeQuery(`SELECT * FROM playersArmors, eArmors
-    WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND armor_id = eArmors.id`, [msg.author.id]);
-
-    let player_weapons = (await weapon_result).rows;
-    let player_armors = (await armor_result).rows;
-
-    let weapon_msg = await buildListMessage(null, msg.channel, msg.author.id, "Weapon List", "Choose 2 weapons:", 
-                                    player_weapons, buildWeaponLine, 0, emojiNumbers.length);
-    let armor_msg = await buildListMessage(null, msg.channel, msg.author.id, "Armor List", "Choose 2 armors:", 
-                                    player_armors, buildArmorLine, 0, emojiNumbers.length);
-    await Promise.all([weapon_msg, armor_msg]);
-
-    // Enemy
-    let embed = new Discord.MessageEmbed()
-    .setColor(0x1d51cc)
-    .setTitle(title + " - Enemy List")
-    .setFooter("Press ✅ when ready\nPress ❌ to cancel");
-
-    enemy_infos.forEach(enemy => {
-        embed = embed.addField(`**${enemy.title}**`, `HP: ${enemy.health}\nShields: ${enemy.shield}\nPlate: ${enemy.plate}
-        Regen: ${enemy.regen}\nEvasion: ${enemy.evasion}\nDamage: ${enemy.damage_per_level*enemy.weapon_level}
-        Attack Rate: ${enemy.rate} per turn\nEffect: ${enemy.effect_title != null ? enemy.effect_title : "None"}`, false);
-    });
-
-    let main_msg = await msg.channel.send(embed);
-    main_msg.react('✅');
-    main_msg.react('❌');
-
-    // Register messages
-    saved_messages.add_message('encounterSetup', weapon_msg.id, main_msg.id);
-    saved_messages.add_message('encounterSetup', armor_msg.id, main_msg.id);
-    saved_messages.add_message('encounterConfirm', main_msg.id, {caller_id: msg.author.id, original_command: command, original_msg: msg,
-                                                    player: player, enemies: enemy_infos, msg: main_msg,
-                                                    weapon_info: {list: player_weapons, selected: [], msg: weapon_msg, page: 0},
-                                                    armor_info: {list:player_armors, selected: [], msg: armor_msg, page: 0}});
-    
-    await delay(1000*command.cooldown);
-    if (saved_messages.get_message('encounterConfirm', main_msg.id) != null) {
-        saved_messages.remove_message('encounterSetup', weapon_msg.id);
-        saved_messages.remove_message('encounterSetup', armor_msg.id);
-        saved_messages.remove_message('encounterConfirm', main_msg.id);
-    }
-};
-
-
 var onListReaction = (reaction, user, info, objectName, lineBuilder) => {
-    let list_title = `${objectName.charAt(0).toUpperCase() + objectName.slice(1)} List`;
-    let list_description = `Choose 2 ${objectName}s:`;
+    let listTitle = `${capitalize(objectName)} List`;
+    let listDescription = `Choose 2 ${objectName}s:`;
 
     // Turn pages
     let emoji = reaction.emoji.toString();
@@ -170,7 +187,7 @@ var onListReaction = (reaction, user, info, objectName, lineBuilder) => {
     }
      
     // Update embed
-    buildListMessage(info.msg, info.msg.channel, user.id, list_title, list_description,
+    buildListMessage(info.msg, info.msg.channel, user.id, listTitle, listDescription,
                     info.list, lineBuilder, info.page*emojiNumbers.length, info.page*emojiNumbers.length + emojiNumbers.length, info.selected);
     return info;
 }
@@ -184,29 +201,39 @@ var confirmReaction = async (reaction, pkg) => {
         return;
 
     // Cleanup
-    if (saved_messages.get_message('encounterConfirm', pkg.msg.id) != null) {
-        pkg.weapon_info.msg.delete().catch((err) => console.log('Could not delete the message', err));
-        pkg.armor_info.msg.delete().catch((err) => console.log('Could not delete the message', err));
+    if (saved_messages.get_message('encounterMain', pkg.msg.id) != null) {
+        pkg.players.forEach(player => {
+            player.weapons.msg.delete().catch((err) => console.log('Could not delete the message', err));
+            saved_messages.remove_message('encounterPlayer', player.weapons.msg.id);
+        });
+
+        pkg.players.forEach(player => {
+            player.armors.msg.delete().catch((err) => console.log('Could not delete the message', err));
+            saved_messages.remove_message('encounterPlayer', player.armors.msg.id);
+        });
+
         pkg.msg.delete().catch((err) => console.log('Could not delete the message', err));
-        saved_messages.remove_message('encounterSetup', pkg.weapon_info.msg.id);
-        saved_messages.remove_message('encounterSetup', pkg.armor_info.msg.id);
-        saved_messages.remove_message('encounterConfirm', pkg.msg.id);
+        saved_messages.remove_message('encounterMain', pkg.msg.id);
     }
 
+    // Cancel encounter
     if (emoji === '❌') {
-        cooldownControl.resetCooldown(pkg.original_command, pkg.original_msg.author.id);
+        cooldownControl.resetCooldown(pkg.originalCommand, pkg.originalMsg.author.id);
         return;
     }
 
     // Player
-    let player_weapons = pkg.weapon_info.list.filter((element, index) => {
-        return pkg.weapon_info.selected.includes(index);
+    let playerInstances = [];
+    pkg.players.forEach(player => {
+        player.weapons.list = player.weapons.list.filter((element, index) => {
+            return player.weapons.selected.includes(index);
+        });
+        player.armors.list = player.armors.list.filter((element, index) => {
+            return player.armors.selected.includes(index);
+        });
+    
+        playerInstances.push(generatePlayer(player));
     });
-    let player_armors = pkg.armor_info.list.filter((element, index) => {
-        return pkg.armor_info.selected.includes(index);
-    });
-
-    let player_instance = generatePlayer(pkg.player, player_weapons, player_armors);
 
     // Enemy
     let enemies = [];
@@ -214,37 +241,54 @@ var confirmReaction = async (reaction, pkg) => {
         enemies[i] = generateEnemy(pkg.enemies[i]);
 
     // Battle
-    let combatantA_won = await generateBattle([player_instance], enemies, msg);
+    let combatantA_won = await generateBattle(playerInstances, enemies, msg);
     if (combatantA_won) {
-        let xp_gained = pkg.enemies.reduce((previousValue, enemy) => {
+        let xpGained = pkg.enemies.reduce((previousValue, enemy) => {
             return previousValue += enemy.given_xp;
         }, 0);
 
-        rewards.giveXP(pkg.caller_id, xp_gained, pkg.original_msg);
+        rewards.giveXP(pkg.callerID, xpGained, pkg.originalMsg);
     }
 }
 
 
-var onReaction = async (reaction, user) => {
+var onReaction = async (reaction, user, added) => {
     let msg = reaction.message;
     let confirm_id = msg.id;
 
-    let index = saved_messages.get_message('encounterSetup', msg.id);
+    if (!added)
+        return;
+
+    // Secondary index to main package (player -> package)
+    let index = saved_messages.get_message('encounterPlayer', msg.id);
     if (index) {
         confirm_id = index;
     }
 
-    let pkg = saved_messages.get_message('encounterConfirm', confirm_id);
+    // Main package - a single encounter
+    let pkg = saved_messages.get_message('encounterMain', confirm_id);
     if (pkg) {
-        if (pkg.removed || user.id != pkg.caller_id)
+        let playerIdx = pkg.players.findIndex(player => { return player.info.userid == user.id});
+        if (playerIdx == -1)
             return;
 
-        if (pkg.weapon_info.msg.id == msg.id)
-            pkg.weapon_info = onListReaction(reaction, user, pkg.weapon_info, 'weapon', buildWeaponLine);
-        else if (pkg.armor_info.msg.id == msg.id)
-            pkg.armor_info = onListReaction(reaction, user, pkg.armor_info, 'armor', buildArmorLine);
-        else if (pkg.msg.id == msg.id)
+        // Weapon reaction
+        if (pkg.players[playerIdx].weapons.msg.id == msg.id) {
+            pkg.players[playerIdx].weapons = onListReaction(reaction, user, pkg.players[playerIdx].weapons, 'weapon', buildWeaponLine);
+            return;
+        }
+
+        // Armor reaction
+        if (pkg.players[playerIdx].armors.msg.id == msg.id) {
+            pkg.players[playerIdx].armors = onListReaction(reaction, user, pkg.players[playerIdx].armors, 'armor', buildArmorLine);
+            return;
+        }
+        
+        // Confirm reaction
+        if (pkg.msg.id == msg.id) {
             confirmReaction(reaction, pkg);
+            return;
+        }
     }
 }
 

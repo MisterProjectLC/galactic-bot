@@ -5,6 +5,7 @@ const Fighter = require('./fighter').Fighter;
 const effects = require('./effects');
 const Discord = require('discord.js');
 const delay = require('../utils/delay').delay;
+const {asyncForEach} = require('../utils/asyncForEach');
 
 // Exports
 module.exports.healthbar = healthbar;
@@ -19,45 +20,49 @@ module.exports.Battle = class {
         this.log = "**---BATTLE LOG---**\n";
     }
 
-    update_battle_status(fighters) {
-        let title_list = fighters.reduce((text, element) => {
-            text += element.title + "\n";
-        }, "");
-
+    update_battle_status(fighter, side) {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle(`**Combatants**`, title_list, true);
+        .setTitle(`**${fighter.title} - Side ${side}**`);
 
-        if (fighters[0].image != null)
-            embed = embed.setThumbnail(fighters[0].image);
+        if (fighter.image != null)
+            embed = embed.setThumbnail(fighter.image);
 
-        fighters.forEach((fighter) => {
-            embed = embed
-            .addField(`**${fighter.title}'s Health**`, `${healthbar(fighter.health, fighter.max_health)} ${fighter.health}/${fighter.max_health}`, false)
-            .addField(`**${fighter.title}'s Shields**`, `${healthbar(fighter.shield, fighter.max_shield)} ${fighter.shield}/${fighter.max_shield}`, false)
-            .addField(`**${fighter.title}'s Stats**`, `Plate: ${fighter.plate}\nRegen: ${fighter.regen}\nEvasion: ${fighter.evasion}`, false);
+        embed = embed
+        .addField(`**Health**`, `${healthbar(fighter.health, fighter.max_health)} ${fighter.health}/${fighter.max_health}
+        **Shields**\n${healthbar(fighter.shield, fighter.max_shield)} ${fighter.shield}/${fighter.max_shield}`, true)
+        .addField(`**Stats**`, `Plate: ${fighter.plate}\nRegen: ${fighter.regen}\nEvasion: ${fighter.evasion}`, true);
         
-            let weapon_list = "";
-            fighter.weapons.forEach(weapon => {
-                weapon_list += `**${weapon.title}**\nDamage: ${weapon.damage}\nRate of Attack: ${weapon.rate} per turn\nEffect: ${weapon.effect !== null ? weapon.effect.title : "None"}\n`;
-            });
-            embed = embed.addField(`**${fighter.title}'s Weapons**`, weapon_list.length > 0 ? weapon_list : "-", true);
+        let weapon_list = "";
+        fighter.weapons.forEach(weapon => {
+            weapon_list += `**${weapon.title}**\nDamage: ${weapon.damage}\nRate of Attack: ${weapon.rate} per turn\nEffect: ${weapon.effect !== null ? weapon.effect.title : "None"}\n`;
         });
+        embed = embed.addField(`**Weapons**`, weapon_list.length > 0 ? weapon_list : "-", true);
         
         return embed;
     }
     
     
     async battle(channel) {
-        let left_battle_status = await channel.send(this.update_battle_status(this.left_fighters));
-        let right_battle_status = await channel.send(this.update_battle_status(this.right_fighters));
+        let left_battle_status = [];
+        
+        await asyncForEach(this.left_fighters, async (fighter) => {
+            left_battle_status.push(await channel.send(this.update_battle_status(fighter, 'A')));
+        });
+
+        let right_battle_status = [];
+        await asyncForEach(this.right_fighters, async (fighter) => {
+            right_battle_status.push(await channel.send(this.update_battle_status(fighter, 'B')));
+        });
+
+
         let battle_log = await channel.send(`**--BATTLE LOG--**`);
 
         let endgame = 0;
         while (true) {
             await delay(3000);
             this.rounds += 1;
-            this.round(left_battle_status, right_battle_status, battle_log);
+            await this.round(left_battle_status, right_battle_status, battle_log);
     
             endgame = 2;
             this.left_fighters.forEach(fighter => {
@@ -76,19 +81,24 @@ module.exports.Battle = class {
                 break;
         }
 
-        battle_log.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
+        await battle_log.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
         return endgame == 1;
     }
     
-    round(left_battle_status, right_battle_status, battle_log) {
+    async round(left_battle_status, right_battle_status, battle_log) {
         console.log(`ROUND ${this.rounds}`);
         this.log += `**ROUND ${this.rounds}**\n`;
         this.side_round(this.left_fighters, this.right_fighters, battle_log);
         this.side_round(this.right_fighters, this.left_fighters, battle_log);
     
-        left_battle_status.edit(this.update_battle_status(this.left_fighters));
-        right_battle_status.edit(this.update_battle_status(this.right_fighters));
-        battle_log.edit(this.log);
+        
+        for (let i = 0; i < left_battle_status.length; i++)
+            await left_battle_status[i].edit(this.update_battle_status(this.left_fighters[i], 'A'));
+
+        for (let i = 0; i < right_battle_status.length; i++)
+            await right_battle_status[i].edit(this.update_battle_status(this.right_fighters[i], 'B'));
+
+        await battle_log.edit(this.log);
     }
     
     side_round(actors, opponents, battle_log) {

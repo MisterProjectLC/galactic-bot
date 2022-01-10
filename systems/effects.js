@@ -1,11 +1,11 @@
 
 const effect_list = {
     fire: (damage, attacker, defender) => {
-        defender.health = Math.max(0, defender.health - Math.min(1, damage/10));
+        defender.health = Math.max(0, defender.health - Math.min(1, damage/5));
     },
 
     acid: (damage, attacker, defender) => {
-        defender.plate -= 1;
+        defender.plate -= Math.round(damage/10);
     },
 
     plasma: (damage, attacker, defender) => {

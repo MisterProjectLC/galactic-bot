@@ -1,130 +1,89 @@
+const rewards = require('../systems/rewards');
 const db = require('../external/database.js');
-const errors = require('../data/errors');
 const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
+const errors = require('../data/errors');
+const { delay } = require('../utils/delay.js');
 
-const ITENS_PER_VIEWING = 6;
-
-var buildWeaponLine = (weapon) => {
-    return `${weapon.damage_per_level*weapon.level} DMG, ${weapon.rate} attack(s) per turn, Effect: ${weapon.effect_title !== null ? weapon.effect_title : "None"}`;
-}
-
-var buildArmorLine = (armor) => {
-    return `${armor.health*armor.level} HP, ${armor.shield*armor.level} Shields, ${armor.plate*armor.level} Plate, ` +
-    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion, Resistant to Effect: ${armor.effect_title !== null ? armor.effect_title : "None"}`;
-}
-
-var buildListMessage = async (msg, channel, requester_id, title, description, list, lineBuilder, min, max) => {
-    let embed = new Discord.MessageEmbed()
-    .setColor(0x1d51cc)
-    .setTitle(`**${title}**`)
-    .setDescription(`${description}`);
-
-    if (msg === null) {
-        msg = await channel.send(embed);
-        msg.react('◀️');
-        msg.react('▶️');
-    }
-    
-    // Reactions
-    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(requester_id));
-    try {
-        for (const reaction of userReactions.values()) {
-            await reaction.users.remove(requester_id);
-        }
-    } catch (error) {
-        console.error('Failed to remove reactions.');
-    }
-
-    for (let index = Math.max(min, 0); index < Math.min(max, list.length); index++) {
-        embed = embed.addField(`${list[index].title} [${list[index].level}]`, lineBuilder(list[index]), false);
-    }
-
-    // Add message
-    msg.edit(embed);
-    return msg;
-}
-
-var onListReaction = (reaction, user, info, objectName, lineBuilder) => {
-    let list_title = `${objectName.charAt(0).toUpperCase() + objectName.slice(1)} List`;
-    let list_description = `${ITENS_PER_VIEWING} per page`;
-
-    // Turn pages
-    let emoji = reaction.emoji.toString();
-    if (emoji === "◀️" && info.page > 0)
-        info.page -= 1;
-
-    else if (emoji === "▶️" && info.page < Math.floor((info.list.length - 1)/ITENS_PER_VIEWING))
-        info.page += 1;
-     
-    // Update embed
-    buildListMessage(info.msg, info.msg.channel, user.id, list_title, list_description,
-                    info.list, lineBuilder, info.page*ITENS_PER_VIEWING, info.page*ITENS_PER_VIEWING + ITENS_PER_VIEWING);
-    return info;
-}
+const LIMIT_PER_PAGE = 6;
 
 // Exports
 module.exports = {
     name: "check",
-    category: "General",
-    description: "Check your stats, items and character.", 
-    min: 0, max: 0, cooldown: 5,
+    category: "Shop",
+    description: "Check an specific item from the Shop.", 
+    examples: ["#check 4: check the 4th equipment in the shop."],
+    min: 1, max: 1, cooldown: 2,
     execute: async (com_args, msg) => {
-        let response = await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE userID`, [msg.author.id]);
-        let player = response.rows[0];
-        if (response.rowCount < 1) {
-            msg.reply(errors.unregisteredPlayer);
+        let i = parseInt(com_args[0]);
+        if (i === NaN) {
+            msg.reply(errors.invalidArgs);
+            return;
+        }
+        i -= 1;
+
+        let weapons = [];
+        let armors = [];
+
+        let weapon_promise = db.makeQuery(`SELECT weapons.title, cost_per_level, damage_per_level, rate, min_level, effects.title as effect_title, 
+        playersWeapons.level
+        FROM (weapons LEFT OUTER JOIN effects ON weapons.effect = effects.id) 
+        LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
+        (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true
+        ORDER BY cost_per_level, weapons.title`, [msg.author.id]).then((result) => {
+            weapons = result.rows;
+        });
+
+        let armor_promise = db.makeQuery(`SELECT armors.title, cost_per_level, health, shield, plate, regen, evasion, min_level, effects.title as effect_title, 
+        playersArmors.level
+        FROM (armors LEFT OUTER JOIN effects ON armors.effect = effects.id) 
+        LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
+        (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true 
+        ORDER BY cost_per_level, armors.title`, [msg.author.id]).then((result) => {
+            armors = result.rows;
+        });
+
+        await Promise.all([weapon_promise, armor_promise]);
+
+        if (i < 0 || i >= weapons.length + armors.length) {
+            msg.reply(errors.invalidArgs);
             return;
         }
 
-        // REMOVE ASAP
-        db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [msg.author.id, (new Date().getTime())]);
-        
+        let item = (i < weapons.length ? weapons[i] : armors[i-weapons.length]);
+
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle(player.title)
-        .setThumbnail(msg.author.avatarURL())
-        .addField('Level', player.level, true)
-        .addField('XP', player.xp, true)
-        .addField('Coins', player.coins, true);
+        .setTitle(item.title);
+
+        if (i < weapons.length) {
+            embed = embed
+            .addField(`Info`,
+                `Cost: ${weapons[i].cost_per_level}
+                Min Level to buy: ${weapons[i].min_level}
+                Your level with this: ${weapons[i].level !== null ? weapons[i].level : 0}`, true)
+            .addField(`Stats`,
+                `Damage: ${weapons[i].damage_per_level}
+                Rate of Attack: ${weapons[i].rate}
+                Effect: ${weapons[i].effect_title !== null ? weapons[i].effect_title : "None"}`, true);
+
+        } else if (i < weapons.length + armors.length) {
+            i -= weapons.length;
+            embed = embed
+            .addField(`Info`,
+                `Cost: ${armors[i].cost_per_level}
+                Min Level to buy: ${armors[i].min_level}
+                Your level with this: ${armors[i].level !== null ? armors[i].level : 0}`, true)
+            .addField(`Stats`,
+                `Health: ${armors[i].health}
+                Shields: ${armors[i].shield}
+                Plate: ${armors[i].plate}
+                Regen: ${armors[i].regen}
+                Evasion: ${armors[i].evasion}
+                Resistance to Effect: ${armors[i].effect_title !== null ? armors[i].effect_title : "None"}`, true);
+        }
 
         msg.reply(embed);
-
-        let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
-        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [msg.author.id]);
-        let armor_result = db.makeQuery(`SELECT * FROM playersArmors, eArmors
-        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND armor_id = eArmors.id`, [msg.author.id]);
-
-        let player_weapons = (await weapon_result).rows;
-        let player_armors = (await armor_result).rows;
-
-        console.log(player_weapons.length);
-        console.log(player_armors.length);
-
-        let weapon_msg = await buildListMessage(null, msg.channel, msg.author.id, "Weapon List", `${ITENS_PER_VIEWING} per page`, 
-                                    player_weapons, buildWeaponLine, 0, ITENS_PER_VIEWING);
-        let armor_msg = await buildListMessage(null, msg.channel, msg.author.id, "Armor List", `${ITENS_PER_VIEWING} per page`, 
-                                    player_armors, buildArmorLine, 0, ITENS_PER_VIEWING);
-
-        saved_messages.add_message('checkPageTurn', weapon_msg.id, {caller_id: msg.author.id,
-            weapon_info: {list: player_weapons, msg: weapon_msg, page: 0}});
-        saved_messages.add_message('checkPageTurn', armor_msg.id, {caller_id: msg.author.id,
-            armor_info: {list:player_armors, selected: [], msg: armor_msg, page: 0}});
     },
-
-    permission: (msg) => true,
-    reaction: (reaction, user) => {
-        let msg = reaction.message;
-
-        let pkg = saved_messages.get_message('checkPageTurn', msg.id);
-        if (pkg) {
-            if (user.id != pkg.caller_id)
-                return;
-
-            if (pkg.weapon_info)
-                pkg.weapon_info = onListReaction(reaction, user, pkg.weapon_info, 'weapon', buildWeaponLine);
-            else if (pkg.armor_info)
-                pkg.armor_info = onListReaction(reaction, user, pkg.armor_info, 'armor', buildArmorLine);
-        }
-    }
+    permission: (msg) => true
 };

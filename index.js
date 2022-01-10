@@ -108,7 +108,18 @@ Client.on("messageReactionAdd", (reaction, user) => {
     const { commands } = reaction.message.client;
     commands.forEach(async (command) => {
         if (command.reaction)
-            command.reaction(reaction, user);
+            command.reaction(reaction, user, true);
+    });
+})
+
+Client.on("messageReactionRemove", (reaction, user) => {
+    if (user === Client.user || reaction.message.author != Client.user)
+        return;
+    
+    const { commands } = reaction.message.client;
+    commands.forEach(async (command) => {
+        if (command.reaction)
+            command.reaction(reaction, user, false);
     });
 })
 

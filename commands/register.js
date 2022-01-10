@@ -14,7 +14,7 @@ module.exports = {
                 return;
             }
             
-            await db.makeQuery(`INSERT INTO players(userID) VALUES ($1)`, [msg.author.id]);
+            await db.makeQuery(`INSERT INTO players(userID, title) VALUES ($1, $2)`, [msg.author.id, msg.member.displayName]);
             msg.reply("Registered player!");
         });
     }, 

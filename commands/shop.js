@@ -148,12 +148,12 @@ module.exports = {
             }
             msg.edit("Purchase confirmed!");
             
-            db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [msg.author.id, pkg.cost]);
+            db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [msg.author.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
             if (pkg.isWeapon) {
-                db.makeQuery(`SELECT buy_weapon($1, $2)`, [user.id, pkg.item.title]);
+                db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
                 console.log("Weapon bought!");
             } else {
-                db.makeQuery(`SELECT buy_armor($1, $2)`, [user.id, pkg.item.title]);
+                db.makeQuery(`SELECT buy_armor($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
                 console.log("Armor bought!");
             }
             return;

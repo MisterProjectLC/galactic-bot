@@ -43,7 +43,7 @@ var giveXP = async (user, xp, msg, command) => {
         if (!levelup)
             msg.reply(`You have received ${xp}XP! You now have ${newXP}XP.`);
         
-        await db.makeQuery(`UPDATE players SET xp = $2, level = $3 WHERE userid = $1`, [user, newXP, level]);
+        await db.makeQuery(`UPDATE players SET xp = $2, level = $3, title = $4 WHERE userid = $1`, [user, newXP, level, msg.member.displayName]);
     });
 }
 

@@ -92,7 +92,6 @@ var generateEncounter = async (title, msg, enemy_infos, command) => {
     // Player
     let result = await db.makeQuery(`SELECT * FROM ePlayers WHERE userid ilike $1`, [msg.author.id]);
     let player = result.rows[0];
-    player.title = msg.member.displayName;
     player.image = msg.author.avatarURL();
 
     let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
@@ -186,9 +185,9 @@ var confirmReaction = async (reaction, pkg) => {
 
     // Cleanup
     if (saved_messages.get_message('encounterConfirm', pkg.msg.id) != null) {
-        pkg.weapon_info.msg.delete();
-        pkg.armor_info.msg.delete();
-        pkg.msg.delete();
+        pkg.weapon_info.msg.delete().catch((err) => console.log('Could not delete the message', err));
+        pkg.armor_info.msg.delete().catch((err) => console.log('Could not delete the message', err));
+        pkg.msg.delete().catch((err) => console.log('Could not delete the message', err));
         saved_messages.remove_message('encounterSetup', pkg.weapon_info.msg.id);
         saved_messages.remove_message('encounterSetup', pkg.armor_info.msg.id);
         saved_messages.remove_message('encounterConfirm', pkg.msg.id);

@@ -50,16 +50,16 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION buy_weapon(user_id text, weapon_title text) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION buy_weapon(user_id text, weapon_title text, amount int) RETURNS BOOLEAN AS $$
 BEGIN
 	IF (NOT EXISTS (SELECT player_id FROM playersWeapons WHERE player_id = (SELECT id FROM players WHERE userid = user_id)
 	AND weapon_id = (SELECT id FROM weapons WHERE title = weapon_title))) THEN
-		INSERT INTO playersWeapons(player_id, weapon_id)
-		SELECT players.id, weapons.id 
+		INSERT INTO playersWeapons(player_id, weapon_id, level)
+		SELECT players.id, weapons.id, amount
 		FROM players, weapons
 		WHERE players.userid = user_id AND weapons.title = weapon_title;
 	ELSE
-		UPDATE playersWeapons SET level = level + 1
+		UPDATE playersWeapons SET level = level + amount
 		WHERE player_id = (SELECT id FROM players WHERE userid = user_id)
 		AND weapon_id = (SELECT id FROM weapons WHERE title = weapon_title);
 	END IF;
@@ -106,16 +106,16 @@ $$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION buy_armor(user_id text, armor_title text) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION buy_armor(user_id text, armor_title text, amount int) RETURNS BOOLEAN AS $$
 BEGIN
 	IF (NOT EXISTS (SELECT player_id FROM playersArmors WHERE player_id = (SELECT id FROM players WHERE userid = user_id)
 	AND armor_id = (SELECT id FROM armors WHERE title = armor_title))) THEN
-		INSERT INTO playersArmors(player_id, armor_id)
-		SELECT players.id, armors.id 
+		INSERT INTO playersArmors(player_id, armor_id, level)
+		SELECT players.id, armors.id, amount
 		FROM players, armors
 		WHERE players.userid = user_id AND armors.title = armor_title;
 	ELSE
-		UPDATE playersArmors SET level = level + 1
+		UPDATE playersArmors SET level = level + amount
 		WHERE player_id = (SELECT id FROM players WHERE userid = user_id)
 		AND armor_id = (SELECT id FROM armors WHERE title = armor_title);
 	END IF;

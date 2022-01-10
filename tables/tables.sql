@@ -24,7 +24,7 @@ CREATE TABLE players (
 
 CREATE VIEW ePlayers AS (
 	SELECT health, plate, shield, regen, evasion, players.id, players.coins, players.xp,
-	players.level, players.userid
+	players.level, players.userid, players.title
 	FROM entities INNER JOIN players
 	ON entities.id = players.entity
 );

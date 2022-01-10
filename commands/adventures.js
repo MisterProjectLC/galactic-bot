@@ -1,5 +1,4 @@
 const db = require('../external/database.js');
-const battle = require('../systems/battle');
 const Discord = require('discord.js');
 const asyncForEach = require('../utils/asyncForEach').asyncForEach;
 

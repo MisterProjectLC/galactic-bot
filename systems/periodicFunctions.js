@@ -5,8 +5,15 @@ var refreshFlasks = () => {
     setTimeout(refreshFlasks, 24 * 60 * 1000);
 }
 
+var rotatingShop = () => {
+    db.makeQuery('UPDATE weapons SET in_shop = false');
+    db.makeQuery('UPDATE armors SET in_shop = false');
+    setTimeout(rotatingShop, 24 * 60 * 1000);
+}
+
 var initializePeriodic = () => {
     setTimeout(refreshFlasks, 24 * 60 * 1000);
+    setTimeout(rotatingShop, 24 * 60 * 1000);
 }
 
 module.exports.refreshFlasks = refreshFlasks;

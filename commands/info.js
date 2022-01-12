@@ -3,16 +3,17 @@ const errors = require('../data/errors');
 const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
 const {removeReactions} = require('../utils/removeReactions');
+const {capitalize} = require('../utils/capitalize');
 
 const ITENS_PER_VIEWING = 6;
 
 var buildWeaponLine = (weapon) => {
-    return `${weapon.damage_per_level*weapon.level} DMG, ${weapon.rate} attack(s) per turn, Effect: ${weapon.effect_title !== null ? weapon.effect_title : "None"}`;
+    return `${weapon.damage_per_level*weapon.level} DMG, ${weapon.rate} attack(s) per turn, Effect: ${weapon.effect_title !== null ? capitalize(weapon.effect_title) : "None"}`;
 }
 
 var buildArmorLine = (armor) => {
     return `${armor.health*armor.level} HP, ${armor.shield*armor.level} Shields, ${armor.plate*armor.level} Plate, ` +
-    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion, Resistant to Effect: ${armor.effect_title !== null ? armor.effect_title : "None"}`;
+    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion, Resistant to Effect: ${armor.effect_title !== null ? capitalize(armor.effect_title) : "None"}`;
 }
 
 var buildListMessage = async (msg, channel, requester_id, title, description, list, lineBuilder, min, max) => {

@@ -3,6 +3,9 @@ const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
 const {removeReactions} = require('../utils/removeReactions');
 
+const emojiNumbers = ['2️⃣', '3️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
+
+var parties = {};
 
 var createEmbed = async (members, unorderedRows, partySize) => {
     let titles = [];
@@ -15,7 +18,7 @@ var createEmbed = async (members, unorderedRows, partySize) => {
     let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
         .setTitle(`${titles[0]}'s Party`)
-        .setFooter("Press 🔼 to join the party.");
+        .setFooter("Press 🔼 to join the party.\nHost: Press 2️⃣-8️⃣ to kick members out");
 
         let memberList = '';
         for (let i = 0; i < partySize; i++)
@@ -56,18 +59,26 @@ module.exports = {
 
         let m = await msg.reply(embed);
         m.react('🔼');
+        for (let i = 0; i < Math.min(emojiNumbers.length, partySize); i++)
+            m.react(emojiNumbers[i]);
+
+        if (parties[msg.author.id]) {
+            parties[msg.author.id].delete().catch((err) => console.log('Could not delete the message', err));
+            saved_messages.remove_message('party', parties[msg.author.id].id);
+        }
         saved_messages.add_message('party', m.id, {callerID: msg.author.id, members: members, partySize: partySize, msg: m});
+        parties[msg.author.id] = m;
 
     }, 
     reaction: async (reaction, user, added) => {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();
 
-        if (emoji !== '🔼')
+        let pkg = saved_messages.get_message('party', msg.id);
+        if (!pkg)
             return;
 
-        let pkg = saved_messages.get_message('party', msg.id);
-        if (pkg) {
+        if (emoji === '🔼') {
             // The host is automatically invited
             await removeReactions(msg, pkg.callerID);
             if (pkg.callerID === user.id)
@@ -83,17 +94,33 @@ module.exports = {
                 pkg.members.splice(pkg.members.indexOf(user.id), 1);
             else
                 return;
-            
-            // Get titles
-            let titles = [];
-            let result = await db.makeQuery('SELECT title, userid FROM players WHERE userid = ANY($1)', [pkg.members]);
-            if (result.rowCount < pkg.members.length)
-                return;
-
-            // Update
-            msg.edit(await createEmbed(pkg.members, result.rows, pkg.partySize));
-            saved_messages.add_message('party', msg.id, {callerID: pkg.callerID, members: pkg.members, partySize: pkg.partySize, msg: msg});
         }
+        
+        else if (emojiNumbers.includes(emoji)) {
+            if (pkg.callerID !== user.id || !added)
+                return;
+            
+            await removeReactions(msg, pkg.callerID);
+            
+            // Modify
+            let index = emojiNumbers.lastIndexOf(emoji)+1;
+
+            if (pkg.members.length <= index)
+                return;
+            
+            await removeReactions(msg, pkg.members[index]);
+            pkg.members.splice(index, 1);
+        }
+
+        // Get titles
+        let result = await db.makeQuery('SELECT title, userid FROM players WHERE userid = ANY($1)', [pkg.members]);
+        if (result.rowCount < pkg.members.length)
+            return;
+
+        // Update
+        msg.edit(await createEmbed(pkg.members, result.rows, pkg.partySize));
+        saved_messages.add_message('party', msg.id, {callerID: pkg.callerID, members: pkg.members, partySize: pkg.partySize, msg: msg});
     },
-    permission: (msg) => true
+    permission: (msg) => true,
+    findPartyMessage: (hostID) => {return parties.hasOwnProperty(hostID) ? parties[hostID] : null}
 };

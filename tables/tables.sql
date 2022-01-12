@@ -129,3 +129,19 @@ CREATE TABLE enemiesAdventures (
 	FOREIGN KEY (enemy_id) REFERENCES enemies(id),
 	FOREIGN KEY (adventure_id) REFERENCES adventures(id)
 );
+
+
+CREATE TABLE conquests (
+	id SERIAL PRIMARY KEY,
+	title text UNIQUE,
+	min_level int DEFAULT 0,
+	min_size int DEFAULT 4
+);
+
+CREATE TABLE enemiesConquests (
+	enemy_id int,
+	conquest_id int,
+	PRIMARY KEY (enemy_id, conquest_id),
+	FOREIGN KEY (enemy_id) REFERENCES enemies(id),
+	FOREIGN KEY (conquest_id) REFERENCES conquests(id)
+);

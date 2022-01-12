@@ -13,8 +13,8 @@ module.exports = {
     examples: ["#adventure Space Adventure: Take part in the 'Space Adventure' mission."],
     min: 0, max: 5, cooldown: 300, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
     execute: async (com_args, msg) => {
-        let best_match = [];
-        let best_score = 0;
+        let bestMatch = [];
+        let bestScore = 0;
 
         let m = await msg.reply("Loading...");
         await db.makeQuery(`SELECT * FROM adventures`).then((result) => {
@@ -22,15 +22,15 @@ module.exports = {
                 let lower_arg = com_args.join(" ").toLowerCase();
                 let lower_title = row.title.toLowerCase();
                 let score = compareTwoStrings(lower_arg, lower_title);
-                if (score > best_score) {
-                    best_match = row;
-                    best_score = score;
+                if (score > bestScore) {
+                    bestMatch = row;
+                    bestScore = score;
                 }
             });            
         });
 
         m.delete();
-        if (best_score < 0.5) {
+        if (bestScore < 0.5) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply(errors.invalidArgs);
             return;
@@ -43,16 +43,16 @@ module.exports = {
             return;
         }
         let player = result.rows[0];
-        if (player.level < best_match.min_level) {
+        if (player.level < bestMatch.min_level) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply("You don't have enough levels to participate in this adventure...");
             return;
         }
 
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
-        WHERE enemiesAdventures.adventure_id = $1`, [best_match.id]);
+        WHERE enemiesAdventures.adventure_id = $1`, [bestMatch.id]);
 
-        encounter.generateEncounter(best_match.title, msg, module.exports, [msg.author.id], result.rows);
+        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, [msg.author.id], result.rows);
     },
 
     reaction: async (reaction, user, added) => {

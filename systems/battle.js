@@ -1,5 +1,4 @@
-
-const {healthbar} = require('./battle_helper');
+const {healthbar} = require('./battleHelper');
 const Weapon = require('./weapon').Weapon;
 const Fighter = require('./fighter').Fighter;
 const effects = require('./effects');
@@ -7,23 +6,26 @@ const Discord = require('discord.js');
 const delay = require('../utils/delay').delay;
 const {asyncForEach} = require('../utils/asyncForEach');
 
+const TURN_DELAY = 6;
+
 // Exports
 module.exports.healthbar = healthbar;
 module.exports.Weapon = Weapon;
 module.exports.Fighter = Fighter;
 module.exports.effects = effects;
 module.exports.Battle = class {
-    constructor(left_fighters, right_fighters) {
-        this.left_fighters = left_fighters;
-        this.right_fighters = right_fighters;
+    constructor(leftFighters, rightFighters) {
+        this.leftFighters = leftFighters;
+        this.rightFighters = rightFighters;
         this.rounds = 0;
         this.log = "**---BATTLE LOG---**\n";
     }
 
-    update_battle_status(fighter, side) {
+    updateBattleStatus(fighter, side) {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle(`**${fighter.title} - Side ${side}**`);
+        .setTitle(`**${fighter.title} - Side ${side}**`)
+        .setThumbnail(fighter.image);
 
         if (fighter.image != null)
             embed = embed.setThumbnail(fighter.image);
@@ -44,28 +46,30 @@ module.exports.Battle = class {
     
     
     async battle(channel) {
-        let left_battle_status = [];
+        let leftBattleStatus = [];
         
-        await asyncForEach(this.left_fighters, async (fighter) => {
-            left_battle_status.push(await channel.send(this.update_battle_status(fighter, 'A')));
+        await asyncForEach(this.leftFighters, async (fighter) => {
+            leftBattleStatus.push(await channel.send(this.updateBattleStatus(fighter, 'A')));
         });
 
-        let right_battle_status = [];
-        await asyncForEach(this.right_fighters, async (fighter) => {
-            right_battle_status.push(await channel.send(this.update_battle_status(fighter, 'B')));
+        let rightBattleStatus = [];
+        await asyncForEach(this.rightFighters, async (fighter) => {
+            rightBattleStatus.push(await channel.send(this.updateBattleStatus(fighter, 'B')));
         });
 
 
-        let battle_log = await channel.send(`**--BATTLE LOG--**`);
+        let battleLog = await channel.send(`**--BATTLE LOG--**`);
 
         let endgame = 0;
         while (true) {
-            await delay(3000);
             this.rounds += 1;
-            await this.round(left_battle_status, right_battle_status, battle_log);
+            if (this.rounds >= 22)
+                break;
+            await this.round(leftBattleStatus, rightBattleStatus, battleLog);
+            await delay(TURN_DELAY*1000);
     
             endgame = 2;
-            this.left_fighters.forEach(fighter => {
+            this.leftFighters.forEach(fighter => {
                 if (fighter.health > 0)
                     endgame = 0;
             });
@@ -73,7 +77,7 @@ module.exports.Battle = class {
                 break;
     
             endgame = 1;
-            this.right_fighters.forEach(fighter => {
+            this.rightFighters.forEach(fighter => {
                 if (fighter.health > 0)
                     endgame = 0;
             });
@@ -81,47 +85,52 @@ module.exports.Battle = class {
                 break;
         }
 
-        await battle_log.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
-        return endgame == 1;
+        if (endgame != 0)
+            await battleLog.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
+        else
+            await battleLog.channel.send("Battle lasted too long! Called a stalemate.");
+        return endgame;
     }
     
-    async round(left_battle_status, right_battle_status, battle_log) {
+    async round(leftBattleStatus, rightBattleStatus, battleLog) {
         console.log(`ROUND ${this.rounds}`);
         this.log += `**ROUND ${this.rounds}**\n`;
-        this.side_round(this.left_fighters, this.right_fighters, battle_log);
-        this.side_round(this.right_fighters, this.left_fighters, battle_log);
+        this.sideRound(this.leftFighters, this.rightFighters, battleLog);
+        this.sideRound(this.rightFighters, this.leftFighters, battleLog);
     
+        await battleLog.edit(this.log);
         
-        for (let i = 0; i < left_battle_status.length; i++)
-            await left_battle_status[i].edit(this.update_battle_status(this.left_fighters[i], 'A'));
+        for (let i = 0; i < leftBattleStatus.length; i++)
+            await leftBattleStatus[i].edit(this.updateBattleStatus(this.leftFighters[i], 'A'));
 
-        for (let i = 0; i < right_battle_status.length; i++)
-            await right_battle_status[i].edit(this.update_battle_status(this.right_fighters[i], 'B'));
-
-        await battle_log.edit(this.log);
+        for (let i = 0; i < rightBattleStatus.length; i++)
+            await rightBattleStatus[i].edit(this.updateBattleStatus(this.rightFighters[i], 'B'));
     }
     
-    side_round(actors, opponents, battle_log) {
+    sideRound(actors, opponents, battleLog) {
         actors.forEach(actor => {
             if (actor.health > 0)
-                this.individual_round(actor, opponents, battle_log);
+                this.individualRound(actor, opponents, battleLog);
         });
     }
     
     
-    individual_round(individual, opponents, battle_log) {
+    individualRound(individual, opponents, battleLog) {
         individual.weapons.forEach(weapon => {
             console.log("Carregando com " + weapon.title);
-            if (weapon.charge < 1) {
+            if (weapon.charge < 1)
                 weapon.charge += weapon.rate;
-            }
     
             if (individual.stunned)
                 this.log += `**${individual.title}** is **stunned**!\n`;
-            else
+            else {
                 opponents.forEach(opponent => {
-                    this.attack(individual, weapon, opponent, battle_log);
+                    if (opponent.health > 0)
+                        this.attack(individual, weapon, opponent, battleLog);
                 });
+            
+                weapon.charge = weapon.charge % 1;
+            }
         });
     
         individual.stunned = false;
@@ -129,9 +138,10 @@ module.exports.Battle = class {
     }
     
     
-    attack(attacker, weapon, defender, battle_log) {
-        while (weapon.charge >= 1) {
-            weapon.charge -= 1;
+    attack(attacker, weapon, defender, battleLog) {
+        let charge = weapon.charge;
+        while (charge >= 1) {
+            charge -= 1;
             console.log("Atacando com " + weapon.title);
     
             let rand = Math.random()*100;
@@ -144,7 +154,7 @@ module.exports.Battle = class {
                 }
             }
     
-            let effective_damage = defender.take_damage(weapon.damage);
+            let effective_damage = defender.takeDamage(weapon.damage);
             this.log += `**${attacker.title}** dealt **${effective_damage} damage** to **${defender.title}** using **${weapon.title}**!\n`;
     
             rand = Math.random()*100;

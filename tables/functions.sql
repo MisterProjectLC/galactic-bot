@@ -1,9 +1,20 @@
-
-CREATE OR REPLACE FUNCTION insert_enemy(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iarmor int, iregen int, ievasion int, iweapon text) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION create_enemy(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iplate int, iregen int, ievasion int, iweapon text, idamage int, irate int) RETURNS BOOLEAN AS $$
 BEGIN
+	INSERT INTO weapons(title, damage, rate, in_shop, enemy_weapon) VALUES (iweapon, idamage, irate, false, true);
 	INSERT INTO enemies(title, given_xp, given_coins, weapon) SELECT ititle, igiven_xp, igiven_coins, weapons.id
 	FROM weapons WHERE weapons.title = iweapon;
-	UPDATE entities SET health = ihealth, shield = ishield, armor = iarmor, regen = iregen, evasion = ievasion;
+	UPDATE entities SET health = ihealth, shield = ishield, plate = iplate, regen = iregen, evasion = ievasion WHERE id = (SELECT entity FROM enemies WHERE title = ititle);
+	RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION create_enemy_effect(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iplate int, iregen int, ievasion int, iweapon text, idamage int, irate int, ieffect text) RETURNS BOOLEAN AS $$
+BEGIN
+	INSERT INTO weapons(title, damage, rate, in_shop, enemy_weapon, effect) SELECT iweapon, idamage, irate, false, true, effects.id FROM effects WHERE effects.title ilike ieffect;
+	INSERT INTO enemies(title, given_xp, given_coins, weapon) SELECT ititle, igiven_xp, igiven_coins, weapons.id
+	FROM weapons WHERE weapons.title = iweapon;
+	UPDATE entities SET health = ihealth, shield = ishield, plate = iplate, regen = iregen, evasion = ievasion WHERE id = (SELECT entity FROM enemies WHERE title = ititle);
 	RETURN true;
 END;
 $$ LANGUAGE plpgsql;
@@ -11,10 +22,22 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION insert_enemy_into_adventure(enemy_title text, adventure_title text) RETURNS BOOLEAN AS $$
 BEGIN
-	INSERT INTO enemiesAdventures 
+	INSERT INTO enemiesAdventures(enemy_id, adventure_id)
 	SELECT enemies.id, adventures.id 
 	FROM enemies, adventures 
 	WHERE enemies.title = enemy_title AND adventures.title = adventure_title;
+	RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION insert_enemy_into_conquest(enemy_title text, conquest_title text) RETURNS BOOLEAN AS $$
+BEGIN
+	INSERT INTO enemiesConquests(enemy_id, conquest_id)
+	SELECT enemies.id, conquests.id 
+	FROM enemies, conquests
+	WHERE enemies.title = enemy_title AND conquests.title = conquest_title;
+	RETURN true;
 END;
 $$ LANGUAGE plpgsql;
 

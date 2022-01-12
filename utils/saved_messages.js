@@ -8,7 +8,8 @@ const add_message = (category, index, pkg) => {
 }
 
 const remove_message = (category, index) => {
-    delete confirmationMessages[category][index];
+    if (get_message(category, index) !== null)
+        delete confirmationMessages[category][index];
 }
 
 const get_message = (category, index) => {

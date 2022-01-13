@@ -7,6 +7,7 @@ const delay = require('../utils/delay').delay;
 const {asyncForEach} = require('../utils/asyncForEach');
 
 const TURN_DELAY = 6;
+const MAXIMUM_TURN = 6;
 
 // Exports
 module.exports.healthbar = healthbar;
@@ -63,8 +64,10 @@ module.exports.Battle = class {
         let endgame = 0;
         while (true) {
             this.rounds += 1;
-            if (this.rounds >= 22)
+            if (this.rounds >= MAXIMUM_TURN) {
+                endgame == 1;
                 break;
+            }
             await this.round(leftBattleStatus, rightBattleStatus, battleLog);
             await delay(TURN_DELAY*1000);
     

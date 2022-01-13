@@ -1,6 +1,6 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
-const encounter = require('../systems/encounter');
+const encounter = require('../systems/enemyEncounter');
 const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
 

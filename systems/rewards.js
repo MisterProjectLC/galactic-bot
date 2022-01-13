@@ -47,7 +47,10 @@ var giveXP = async (user, xp, channel, command) => {
     });
 }
 
-var giveCoins = async (user, coins, msg, command) => {
+var giveCoins = async (user, coins, channel, command) => {
+    if (coins == 0)
+        return;
+
     await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [user]).then(async result => {
         if (result.rowCount < 1) {
             channel.send(`<@${user}>, ` + errors.unregisteredPlayer);

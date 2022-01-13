@@ -9,7 +9,7 @@ module.exports = {
     nicknames: ["ranking", "rankings", "rank"],
     category: "General",
     description: "Check the leaderboards.", 
-    min: 0, max: 0,
+    min: 0, max: 0, cooldown: 10,
     execute: async (com_args, msg) => {
         let achievers = db.makeQuery(`SELECT victory_time, title FROM players WHERE victory_time IS NOT NULL ORDER BY victory_time ASC`);
         let players = db.makeQuery(`SELECT level, xp, title FROM players ORDER BY level DESC, xp DESC`);

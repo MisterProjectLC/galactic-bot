@@ -1,6 +1,6 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
-const encounter = require('../systems/encounter');
+const encounter = require('../systems/enemyEncounter');
 const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
 const saved_messages = require('../utils/saved_messages');
@@ -74,8 +74,8 @@ module.exports = {
         encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, partyMembers, result.rows);
     },
 
-    reaction: async (reaction, user) => {
-        encounter.onReaction(reaction, user);
+    reaction: async (reaction, user, added) => {
+        encounter.onReaction(reaction, user, added);
     },
 
     permission: (msg) => true

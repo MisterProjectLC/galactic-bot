@@ -1,3 +1,4 @@
+const db = require('../external/database.js');
 const rewards = require('../systems/rewards');
 
 // Exports

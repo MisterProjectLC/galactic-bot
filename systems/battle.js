@@ -7,7 +7,7 @@ const delay = require('../utils/delay').delay;
 const {asyncForEach} = require('../utils/asyncForEach');
 
 const TURN_DELAY = 6;
-const MAXIMUM_TURN = 6;
+const MAXIMUM_TURN = 8;
 
 // Exports
 module.exports.healthbar = healthbar;
@@ -15,9 +15,11 @@ module.exports.Weapon = Weapon;
 module.exports.Fighter = Fighter;
 module.exports.effects = effects;
 module.exports.Battle = class {
-    constructor(leftFighters, rightFighters) {
+    constructor(leftFighters, rightFighters, leftArePlayers, rightArePlayers) {
         this.leftFighters = leftFighters;
         this.rightFighters = rightFighters;
+        this.leftArePlayers = leftArePlayers;
+        this.rightArePlayers = rightArePlayers;
         this.rounds = 0;
         this.log = "**---BATTLE LOG---**\n";
     }
@@ -98,8 +100,8 @@ module.exports.Battle = class {
     async round(leftBattleStatus, rightBattleStatus, battleLog) {
         console.log(`ROUND ${this.rounds}`);
         this.log += `**ROUND ${this.rounds}**\n`;
-        this.sideRound(this.leftFighters, this.rightFighters, battleLog);
-        this.sideRound(this.rightFighters, this.leftFighters, battleLog);
+        this.sideRound(this.leftFighters, this.rightFighters, battleLog, !this.leftArePlayers);
+        this.sideRound(this.rightFighters, this.leftFighters, battleLog, !this.rightArePlayers);
     
         await battleLog.edit(this.log);
         
@@ -110,15 +112,19 @@ module.exports.Battle = class {
             await rightBattleStatus[i].edit(this.updateBattleStatus(this.rightFighters[i], 'B'));
     }
     
-    sideRound(actors, opponents, battleLog) {
+    sideRound(actors, opponents, battleLog, attackAll) {
         actors.forEach(actor => {
             if (actor.health > 0)
-                this.individualRound(actor, opponents, battleLog);
+                this.individualRound(actor, opponents, battleLog, attackAll);
         });
     }
     
     
-    individualRound(individual, opponents, battleLog) {
+    individualRound(individual, opponents, battleLog, attackAll) {
+        individual.evasionSum += individual.evasion;
+        if (individual.evasion > 0)
+            this.log += `**${defender.title}**'s evasion chance increased by **${individual.evasion}%**. It is now at **${defender.evasionSum}%**.\n`;
+
         individual.weapons.forEach(weapon => {
             console.log("Carregando com " + weapon.title);
             if (weapon.charge < 1)
@@ -127,9 +133,14 @@ module.exports.Battle = class {
             if (individual.stunned)
                 this.log += `**${individual.title}** is **stunned**!\n`;
             else {
+                let alreadyAttacked = false;
                 opponents.forEach(opponent => {
+                    if (alreadyAttacked && weapon.rate >= 1 && !attackAll)
+                        return;
+
                     if (opponent.health > 0)
                         this.attack(individual, weapon, opponent, battleLog);
+                    alreadyAttacked = true;
                 });
             
                 weapon.charge = weapon.charge % 1;
@@ -148,13 +159,11 @@ module.exports.Battle = class {
             console.log("Atacando com " + weapon.title);
     
             let rand = Math.random()*100;
-            if (defender.evasion > rand) {
-                if (defender.frozen)
-                    defender.frozen = false;
-                else {
-                    this.log += `**${defender.title}** has evaded the attack! Chance: **${defender.evasion}%** > **${rand.toFixed(0)}%**\n`;
-                    return;
-                }
+            if (defender.evasionSum > rand) {
+                this.log += `**${defender.title}** has evaded the attack! Chance: **${defender.evasionSum}%** > **${rand.toFixed(0)}%**\n`;
+                defender.evasionSum = Math.max(0, defender.evasionSum-defender.evasion);
+                this.log += `**${defender.title}**'s evasion chance is now at **${defender.evasionSum}%**.\n`;
+                return;
             }
     
             let effective_damage = defender.takeDamage(weapon.damage);

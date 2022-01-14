@@ -29,7 +29,7 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos) 
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle(title + " - Enemy List")
-    .setDescription("If the battle reaches the 6th round, the enemies win automatically.")
+    .setDescription("If the battle reaches the 8th round, the enemies win automatically.")
     .setFooter("Combatants: Press ✅ when ready\nHost: Press ❌ to cancel");
 
     // Enemies

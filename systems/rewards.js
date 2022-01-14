@@ -44,6 +44,7 @@ var giveXP = async (user, xp, channel, command) => {
             channel.send(`<@${user}>, you have received ${xp}XP! You now have ${newXP}XP.`);
         
         await db.makeQuery(`UPDATE players SET xp = $2, level = $3 WHERE userid = $1`, [user, newXP, level]);
+        await db.makeQuery(`UPDATE entities SET health = health + 1 WHERE id = (SELECT entity FROM players WHERE userid = $1)`, [user]);
     });
 }
 

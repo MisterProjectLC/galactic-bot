@@ -1,7 +1,7 @@
 
 const effect_list = {
     fire: (damage, attacker, defender) => {
-        defender.health = Math.max(0, defender.health - Math.min(1, damage/5));
+        defender.health = Math.max(0, defender.health - Math.min(1, damage/2));
     },
 
     acid: (damage, attacker, defender) => {
@@ -13,7 +13,7 @@ const effect_list = {
     },
 
     freeze: (damage, attacker, defender) => {
-        defender.frozen = true;
+        defender.evasion = Math.max(0, defender.evasion - Math.min(1, (damage - defender.plate)/10));
     },
 
     shock: (damage, attacker, defender) => {

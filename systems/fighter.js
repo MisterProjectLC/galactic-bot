@@ -9,11 +9,11 @@ module.exports.Fighter = class {
         this.plate = plate;
         this.regen = regen;
         this.evasion = evasion;
+        this.evasionSum = 0;
         this.weapons = weapons;
 
         this.shocked = false;
         this.antihealed = false;
-        this.frozen = false;
     }
 
     takeDamage(damage) {

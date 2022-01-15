@@ -3,9 +3,10 @@ const Discord = require('discord.js');
 const {asyncForEach} = require('../utils/asyncForEach');
 const battle = require('../systems/battle');
 const {capitalize} = require('../utils/capitalize');
-const saved_messages = require('../utils/saved_messages');
+//const saved_messages = require('../utils/saved_messages');
 
-const emojiNumbers = ['1️⃣', '2️⃣', '3️⃣'];
+const emojiNumbers = ['🇦','🇧','🇨'];
+const letters = ['A', 'B', 'C'];
 
 
 let generatePlayer = (player) => {
@@ -55,16 +56,16 @@ let buildListMessage = async (msg, channel, playerID, playerTitle, title, descri
     // Reactions
     const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(playerID));
     try {
-        for (const reaction of userReactions.values()) {
+        for (const reaction of userReactions.values())
             await reaction.users.remove(playerID);
-        }
     } catch (error) {
         console.error('Failed to remove reactions.');
     }
 
     for (let index = Math.max(min, 0); index < Math.min(max, list.length); index++) {
         let selected_text = selected.includes(index) ? 'SELECTED' : '';
-        embed = embed.addField(`${index+1}- ${list[index].title} [${list[index].level}] ${selected_text}`, lineBuilder(list[index]), false);
+        embed = embed.addField(`${letters[index % letters.length]}${index+1}- ${list[index].title} [${list[index].level}] ${selected_text}`, 
+        lineBuilder(list[index]), false);
     }
 
     // Add message
@@ -91,14 +92,14 @@ let onListReaction = (reaction, user, info, playerTitle, objectName, lineBuilder
         if (info.list.length <= objectNumber)
             return info;
 
-        let selectedIndex = info.selected.lastIndexOf(info.page*emojiNumbers.length + objectNumber);
+        let selectedIndex = info.selected.lastIndexOf(objectNumber);
         if (selectedIndex == -1) {
             if (info.selected.length < 2)
-                info.selected.push(info.page*emojiNumbers.length + objectNumber);
+                info.selected.push(objectNumber);
             else
                 list_description = `You already have 2 ${objectName}s selected!`;
         } else
-            info.selected.splice(selectedIndex, 1);
+            info.selected.splice(objectNumber, 1);
     }
      
     // Update embed
@@ -160,8 +161,8 @@ module.exports = {
             ]);
     },
     
-    generateBattle: async (combatantsA, combatantsB, msg) => {
-        return await new battle.Battle(combatantsA, combatantsB).battle(msg.channel);
+    generateBattle: async (combatantsA, combatantsB, msg, leftArePlayers = true, rightArePlayers = false) => {
+        return await new battle.Battle(msg.channel, combatantsA, combatantsB, leftArePlayers, rightArePlayers).battle();
     },
 
     updateInventory: (reaction, user, playerRef) => {

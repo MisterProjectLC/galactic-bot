@@ -37,7 +37,7 @@ module.exports = {
         let bet = 0;
         if (com_args.length >= 2) {
             let parsed = parseInt(com_args[1]);
-            if (parsed !== NaN && parsed > 0)
+            if (parsed === parsed && parsed > 0)
                 bet = parsed;
         }
 

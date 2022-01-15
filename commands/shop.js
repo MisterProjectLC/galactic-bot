@@ -8,7 +8,7 @@ var showShop = async (weapons, armors, channel) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle("The Shop")
-    .setDescription("*To read more information about an item, use #info <number>*");
+    .setDescription("*To read more information about an item, use #check <number>*");
 
     let total_i = 1;
     let text = '';
@@ -43,7 +43,7 @@ var checkShop = async (com_args, msg) => {
 var buyFromShop = async (com_args, msg) => {
     // Get shop index
     let shopIndex = parseInt(com_args[0]);
-    if (shopIndex === NaN) {
+    if (shopIndex !== shopIndex) {
         msg.reply(errors.invalidArgs);
         return;
     }
@@ -53,7 +53,7 @@ var buyFromShop = async (com_args, msg) => {
     let purchaseAmount = 1;
     if (com_args.length > 1) {
         let p = parseInt(com_args[1]);
-        if (p !== NaN)
+        if (p === p)
             purchaseAmount = p;
     }
 
@@ -61,12 +61,12 @@ var buyFromShop = async (com_args, msg) => {
     let armors = [];
 
     // Check if item exists
-    let result = await db.makeQuery(`SELECT weapons.title, cost_per_level, level
+    let result = await db.makeQuery(`SELECT weapons.title, cost_per_level, level, min_level
     FROM weapons LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
     (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, weapons.title`, [msg.author.id]);
     weapons = result.rows;
 
-    result = await db.makeQuery(`SELECT title, cost_per_level, level
+    result = await db.makeQuery(`SELECT title, cost_per_level, level, min_level
     FROM armors LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
     (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, armors.title`, [msg.author.id]);
     armors = result.rows;
@@ -82,9 +82,19 @@ var buyFromShop = async (com_args, msg) => {
     let cost = item.cost_per_level;
     let coins = 0;
 
-    result = await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [msg.author.id]);
+    if (item.level != null && item.level + purchaseAmount > 100) {
+        msg.reply("Items can't go over Level 100!");
+        return;
+    }
+
+    result = await db.makeQuery(`SELECT coins, level FROM players WHERE userid = $1`, [msg.author.id]);
     if (result.rowCount < 1) {
         msg.reply(errors.unregisteredPlayer);
+        return;
+    }
+
+    if (result.rows[0].level < item.min_level) {
+        msg.reply("Your level is not high enough for this item...");
         return;
     }
 

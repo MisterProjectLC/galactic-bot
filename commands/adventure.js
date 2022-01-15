@@ -61,7 +61,7 @@ module.exports = {
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
         WHERE enemiesAdventures.adventure_id = $1`, [bestMatch.id]);
 
-        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, [msg.author.id], result.rows);
+        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, [msg.author.id], result.rows, 3);
     },
 
     reaction: async (reaction, user, added) => {

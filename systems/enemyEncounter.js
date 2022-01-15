@@ -20,33 +20,44 @@ var cleanup = (pkg, name) => {
     }
 }
 
-
-var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos) => {
-    // Players + Create weapons/armor messages
-    let players = await generatePlayerInfos(playerIDs, msg);
-
+var generateEnemyEmbed = (title, maxEnemies,  enemyInfos, enemyInfosInGame) => {
     // Embed
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle(title + " - Enemy List")
-    .setDescription("If the battle reaches the 8th round, the enemies win automatically.")
-    .setFooter("Combatants: Press ✅ when ready\nHost: Press ❌ to cancel");
+    .setDescription("If the battle reaches the 9th round, the enemies win automatically.");
+
+    if (maxEnemies > enemyInfosInGame.length && enemyInfos.length >= 1)
+        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel\nHost: Press 🆙 to add an enemy");
+    else
+        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel");
 
     // Enemies
-    let r = randomInt(enemyInfos.length);
-    let enemyInfosInGame = [enemyInfos[r]];
-    enemyInfos.splice(r, 1);
-
     enemyInfosInGame.forEach(enemy => {
         embed = embed.addField(`**${enemy.title}**`, `HP: ${enemy.health}\nShields: ${enemy.shield}\nPlate: ${enemy.plate}
         Regen: ${enemy.regen}\nEvasion: ${enemy.evasion}\nDamage: ${enemy.damage_per_level*enemy.weapon_level}
         Attack Rate: ${enemy.rate} per turn\nEffect: ${enemy.effect_title != null ? capitalize(enemy.effect_title) : "None"}`, false);
     });
 
+    return embed;
+}
+
+
+var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, maxEnemies = 1) => {
+    // Players + Create weapons/armor messages
+    let players = await generatePlayerInfos(playerIDs, msg);
+
+    // Enemies
+    let r = randomInt(enemyInfos.length);
+    let enemyInfosInGame = [enemyInfos[r]];
+    enemyInfos.splice(r, 1);
+
     // Create summary message
-    let mainMsg = await msg.channel.send(embed);
+    let mainMsg = await msg.channel.send(generateEnemyEmbed(title, maxEnemies, enemyInfos, enemyInfosInGame));
     mainMsg.react('✅');
     mainMsg.react('❌');
+    if (maxEnemies > 1 && enemyInfos.length >= 1)
+        mainMsg.react('🆙');
 
     // Register messages
     players.forEach(player => {
@@ -54,9 +65,8 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos) 
         saved_messages.add_message(command.name+'Player', player.armors.msg.id, mainMsg.id);
     });
 
-    console.log(players);
-    saved_messages.add_message(command.name+'Main', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
-        players: players, enemies: enemyInfosInGame, msg: mainMsg});
+    saved_messages.add_message(command.name+'Main', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg, title: title,
+        players: players, enemies: enemyInfosInGame, enemiesInReserve: enemyInfos, maxEnemies: maxEnemies, msg: mainMsg});
     
     // Cleanup messages
     await delay(1000*command.cooldown);
@@ -66,15 +76,38 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos) 
 
 
 
-var confirmEnemyEncounter = async (reaction, user, pkg, added, command) => {
+var updateEncounter = async (reaction, user, pkg, added, command) => {
     let msg = reaction.message;
     let emoji = reaction.emoji.toString();
 
-    // Cancel encounter
-    if (emoji === '❌' && user.id === pkg.hostID) {
-        cleanup(pkg, command.name);
-        cooldownControl.resetCooldown(pkg.originalCommand, pkg.originalMsg.author.id);
-        return;
+    if (user.id === pkg.hostID) {
+        // Add an enemy
+        if (emoji === '🆙' && pkg.maxEnemies > pkg.enemies.length && pkg.enemiesInReserve.length >= 1) {
+            // Enemies
+            let r = randomInt(pkg.enemiesInReserve.length);
+            pkg.enemies.push(pkg.enemiesInReserve[r]);
+            pkg.enemiesInReserve.splice(r, 1);
+            await pkg.msg.edit(generateEnemyEmbed(pkg.title, pkg.maxEnemies, pkg.enemiesInReserve, pkg.enemies));
+            saved_messages.add_message(command.name+'Main', msg.id, pkg);
+
+            if (!(pkg.maxEnemies > pkg.enemies.length && pkg.enemiesInReserve.length >= 1))
+                pkg.msg.reactions.cache.get('🆙').remove().catch(error => console.error('Failed to remove reactions: ', error));
+            const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(user.id));
+            try {
+                for (const reaction of userReactions.values())
+                    await reaction.users.remove(user.id);
+            } catch (error) {
+                console.error('Failed to remove reactions.');
+            }
+            return;
+        }
+
+        // Cancel encounter
+        else if (emoji === '❌') {
+            cleanup(pkg, command.name);
+            cooldownControl.resetCooldown(pkg.originalCommand, pkg.originalMsg.author.id);
+            return;
+        }
     }
 
     // Confirm encounter
@@ -110,8 +143,13 @@ var confirmEnemyEncounter = async (reaction, user, pkg, added, command) => {
             return previousValue += enemy.given_xp;
         }, 0);
 
+        let coinsGained = pkg.enemies.reduce((previousValue, enemy) => {
+            return previousValue += enemy.given_coins;
+        }, 0);
+
         pkg.players.forEach(player => {
-            rewards.giveXP(player.info.userid, xpGained, msg.channel);
+            rewards.giveXP(player.info.userid, xpGained, msg.channel, command);
+            rewards.giveCoins(player.info.userid, coinsGained, msg.channel, command);
         });
     }
 }
@@ -146,7 +184,7 @@ var onReaction = async (reaction, user, added, command) => {
         
         // Confirm reaction
         if (pkg.msg.id == msg.id) {
-            confirmEnemyEncounter(reaction, user, pkg, added, command);
+            updateEncounter(reaction, user, pkg, added, command);
             return;
         }
     }

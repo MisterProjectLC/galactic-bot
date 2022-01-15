@@ -36,7 +36,7 @@ var giveXP = async (user, xp, channel, command) => {
 
             } else {
                 threshold = xpThreshold(level);
-                channel.send(`<@${user}>, you have leveled up! You are now at Level ${level}.`);
+                channel.send(`<@${user}>, you have leveled up! You are now at Level ${level} and have ${newXP}XP.`);
             }
         }
 

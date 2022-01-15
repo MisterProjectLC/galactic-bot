@@ -19,6 +19,11 @@ CREATE TABLE players (
 	level int DEFAULT 1,
 	userID text NOT NULL,
 	entity int,
+	adventures_left int,
+	bosses_left int,
+	victory_time timestamp,
+	title text,
+	imageurl text,
 	FOREIGN KEY (entity) REFERENCES entities(id)
 );
 
@@ -144,4 +149,9 @@ CREATE TABLE enemiesConquests (
 	PRIMARY KEY (enemy_id, conquest_id),
 	FOREIGN KEY (enemy_id) REFERENCES enemies(id),
 	FOREIGN KEY (conquest_id) REFERENCES conquests(id)
+);
+
+CREATE TABLE timers (
+	title text PRIMARY KEY,
+	time timestamp
 );

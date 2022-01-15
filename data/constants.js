@@ -1,6 +1,6 @@
 module.exports = {
     adventuresMax: 3,
-    adventuresCooldown: 1/60,
+    adventuresCooldown: 4,
     bossesMax: 1,
     bossesCooldown: 12
 }

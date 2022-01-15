@@ -7,7 +7,8 @@ const delay = require('../utils/delay').delay;
 const {asyncForEach} = require('../utils/asyncForEach');
 
 const TURN_DELAY = 6;
-const MAXIMUM_TURN = 8;
+const MAXIMUM_TURN = 9;
+const LINES_PER_LOG = 12;
 
 // Exports
 module.exports.healthbar = healthbar;
@@ -15,13 +16,15 @@ module.exports.Weapon = Weapon;
 module.exports.Fighter = Fighter;
 module.exports.effects = effects;
 module.exports.Battle = class {
-    constructor(leftFighters, rightFighters, leftArePlayers, rightArePlayers) {
+    constructor(channel, leftFighters, rightFighters, leftArePlayers, rightArePlayers) {
         this.leftFighters = leftFighters;
         this.rightFighters = rightFighters;
         this.leftArePlayers = leftArePlayers;
         this.rightArePlayers = rightArePlayers;
         this.rounds = 0;
-        this.log = "**---BATTLE LOG---**\n";
+        this.channel = channel;
+        this.logMsgs = [];
+        this.log = ["**---BATTLE LOG---**"];
     }
 
     updateBattleStatus(fighter, side) {
@@ -46,22 +49,36 @@ module.exports.Battle = class {
         
         return embed;
     }
+
+
+    async logUpdate() {
+        let index = 0;
+        for (index = 0; index < this.log.length; index += LINES_PER_LOG) {
+            let text = this.log.slice(index, index+LINES_PER_LOG).reduce((previousValue, current) => {return previousValue + current + "\n"}, "");
+            if (this.logMsgs.length > index/LINES_PER_LOG)
+                await this.logMsgs[index/LINES_PER_LOG].edit(text);
+            else {
+                let msg = await this.channel.send(text);
+                this.logMsgs.push(msg);
+            }
+        }
+    }
     
     
-    async battle(channel) {
+    async battle() {
         let leftBattleStatus = [];
         
         await asyncForEach(this.leftFighters, async (fighter) => {
-            leftBattleStatus.push(await channel.send(this.updateBattleStatus(fighter, 'A')));
+            leftBattleStatus.push(await this.channel.send(this.updateBattleStatus(fighter, 'A')));
         });
 
         let rightBattleStatus = [];
         await asyncForEach(this.rightFighters, async (fighter) => {
-            rightBattleStatus.push(await channel.send(this.updateBattleStatus(fighter, 'B')));
+            rightBattleStatus.push(await this.channel.send(this.updateBattleStatus(fighter, 'B')));
         });
 
 
-        let battleLog = await channel.send(`**--BATTLE LOG--**`);
+        this.logMsgs.push(await this.channel.send(`**--BATTLE LOG--**`));
 
         let endgame = 0;
         while (true) {
@@ -70,7 +87,7 @@ module.exports.Battle = class {
                 endgame == 1;
                 break;
             }
-            await this.round(leftBattleStatus, rightBattleStatus, battleLog);
+            await this.round(leftBattleStatus, rightBattleStatus);
             await delay(TURN_DELAY*1000);
     
             endgame = 2;
@@ -91,19 +108,19 @@ module.exports.Battle = class {
         }
 
         if (endgame != 0)
-            await battleLog.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
+            await this.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
         else
-            await battleLog.channel.send("Battle lasted too long! Called a stalemate.");
+            await this.channel.send("Battle lasted too long! Combatant(s) B win by default.");
         return endgame;
     }
     
-    async round(leftBattleStatus, rightBattleStatus, battleLog) {
+    async round(leftBattleStatus, rightBattleStatus) {
         console.log(`ROUND ${this.rounds}`);
-        this.log += `**ROUND ${this.rounds}**\n`;
-        this.sideRound(this.leftFighters, this.rightFighters, battleLog, !this.leftArePlayers);
-        this.sideRound(this.rightFighters, this.leftFighters, battleLog, !this.rightArePlayers);
+        this.log.push(`**ROUND ${this.rounds}**`);
+        this.sideRound(this.leftFighters, this.rightFighters, !this.leftArePlayers);
+        this.sideRound(this.rightFighters, this.leftFighters, !this.rightArePlayers);
     
-        await battleLog.edit(this.log);
+        await this.logUpdate();
         
         for (let i = 0; i < leftBattleStatus.length; i++)
             await leftBattleStatus[i].edit(this.updateBattleStatus(this.leftFighters[i], 'A'));
@@ -112,18 +129,18 @@ module.exports.Battle = class {
             await rightBattleStatus[i].edit(this.updateBattleStatus(this.rightFighters[i], 'B'));
     }
     
-    sideRound(actors, opponents, battleLog, attackAll) {
+    sideRound(actors, opponents, attackAll) {
         actors.forEach(actor => {
             if (actor.health > 0)
-                this.individualRound(actor, opponents, battleLog, attackAll);
+                this.individualRound(actor, opponents, attackAll);
         });
     }
     
     
-    individualRound(individual, opponents, battleLog, attackAll) {
+    individualRound(individual, opponents, attackAll) {
         individual.evasionSum += individual.evasion;
         if (individual.evasion > 0)
-            this.log += `**${defender.title}**'s evasion chance increased by **${individual.evasion}%**. It is now at **${defender.evasionSum}%**.\n`;
+            this.log.push(`**${defender.title}**'s evasion chance increased by **${individual.evasion}%**. It is now at **${defender.evasionSum}%**.`);
 
         individual.weapons.forEach(weapon => {
             console.log("Carregando com " + weapon.title);
@@ -131,28 +148,32 @@ module.exports.Battle = class {
                 weapon.charge += weapon.rate;
     
             if (individual.stunned)
-                this.log += `**${individual.title}** is **stunned**!\n`;
+                this.log.push(`**${individual.title}** is **stunned**!`);
             else {
                 let alreadyAttacked = false;
                 opponents.forEach(opponent => {
-                    if (alreadyAttacked && weapon.rate >= 1 && !attackAll)
+                    if (alreadyAttacked && !attackAll)
                         return;
 
-                    if (opponent.health > 0)
-                        this.attack(individual, weapon, opponent, battleLog);
-                    alreadyAttacked = true;
+                    if (opponent.health > 0) {
+                        this.attack(individual, weapon, opponent);
+                        alreadyAttacked = true;
+                    }
                 });
             
                 weapon.charge = weapon.charge % 1;
             }
         });
+
+        if (!individual.antihealed)
+            individual.health = Math.min(individual.max_health, individual.health + individual.regen);
     
         individual.stunned = false;
         individual.antihealed = false;
     }
     
     
-    attack(attacker, weapon, defender, battleLog) {
+    attack(attacker, weapon, defender) {
         let charge = weapon.charge;
         while (charge >= 1) {
             charge -= 1;
@@ -160,18 +181,18 @@ module.exports.Battle = class {
     
             let rand = Math.random()*100;
             if (defender.evasionSum > rand) {
-                this.log += `**${defender.title}** has evaded the attack! Chance: **${defender.evasionSum}%** > **${rand.toFixed(0)}%**\n`;
+                this.log.push(`**${defender.title}** has evaded the attack! Chance: **${defender.evasionSum}%** > **${rand.toFixed(0)}%**`);
                 defender.evasionSum = Math.max(0, defender.evasionSum-defender.evasion);
-                this.log += `**${defender.title}**'s evasion chance is now at **${defender.evasionSum}%**.\n`;
+                this.log.push(`**${defender.title}**'s evasion chance is now at **${defender.evasionSum}%**.`);
                 return;
             }
     
             let effective_damage = defender.takeDamage(weapon.damage);
-            this.log += `**${attacker.title}** dealt **${effective_damage} damage** to **${defender.title}** using **${weapon.title}**!\n`;
+            this.log.push(`**${attacker.title}** dealt **${effective_damage} damage** to **${defender.title}** using **${weapon.title}**!`);
     
             rand = Math.random()*100;
             if (weapon.effect !== null && weapon.effect.level > rand) {
-                this.log += `**${attacker.title}** applied **${weapon.effect.title}** to **${defender.title}**! Chance: **${weapon.effect.level}%** > **${rand.toFixed(0)}%**\n`;
+                this.log.push(`**${attacker.title}** applied **${weapon.effect.title}** to **${defender.title}**! Chance: **${weapon.effect.level}%** > **${rand.toFixed(0)}%**`);
                 weapon.effect.apply(weapon.damage, attacker, defender);
             }
         }

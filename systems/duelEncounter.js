@@ -32,7 +32,7 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle("Duel - " + leftPlayers[0].info.title + " VS " + rightPlayers[0].info.title)
-    .setDescription("The challenger gets to attack first. However, if the fight reaches the 8th round, the challenged player wins automatically.")
+    .setDescription("The challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
     .setFooter("Combatants: Press ✅ when ready\nChallenger: Press ❌ to cancel");
 
     // Create summary message
@@ -102,7 +102,7 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     let rightInstances = generatePlayers(pkg.rightPlayers);
 
     // Battle
-    let endgame = await generateBattle(leftInstances, rightInstances, msg);
+    let endgame = await generateBattle(leftInstances, rightInstances, msg, true, true);
 
     if (endgame == 1)
         rewards.giveCoins(pkg.challengerID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);

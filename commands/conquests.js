@@ -25,7 +25,7 @@ module.exports = {
                         maxXP = xp_result.rows[0].maxxp;
                         minCoins = xp_result.rows[0].mincoins;
                         maxCoins = xp_result.rows[0].maxcoins;
-                        embed = embed.addField(`**${row.title}**`, `XP: ${minXP}-${maxXP}\nCoins: ${minCoins}-${maxCoins}\nMinimum Level: ${row.min_level}
+                        embed = embed.addField(`**${row.title}**`, `XP: ${maxXP}\nCoins: ${maxCoins}\nMinimum Level: ${row.min_level}
                         Minimum Party Size: ${row.min_size}`, true);
                     }
                 });

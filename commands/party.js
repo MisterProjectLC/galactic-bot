@@ -42,7 +42,7 @@ module.exports = {
         let partySize = 4;
         if (com_args > 0) {
             partySize = parseInt(com_args[0]);
-            if (partySize === NaN || partySize < 2 || partySize > 8) {
+            if (partySize !== partySize || partySize < 2 || partySize > 8) {
                 msg.reply(errors.invalidArgs);
                 return;
             }

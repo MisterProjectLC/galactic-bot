@@ -16,7 +16,7 @@ module.exports = {
     min: 1, max: 1, cooldown: 2,
     execute: async (com_args, msg) => {
         let i = parseInt(com_args[0]);
-        if (i === NaN) {
+        if (i !== i) {
             msg.reply(errors.invalidArgs);
             return;
         }

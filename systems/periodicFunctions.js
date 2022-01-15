@@ -1,10 +1,18 @@
 const db = require('../external/database.js');
 const {delay} = require('../utils/delay');
+const constants = require('../data/constants');
 
-var refreshFlasks = () => {
-    console.log("Refresh Flasks");
-    db.makeQuery('UPDATE players SET bosses_left = 1, parties_left = 3, adventures_left = 6');
-    setTimeout(refreshFlasks, 24 * 60 * 60 * 1000);
+var refreshAdventures = () => {
+    console.log("Refresh Adventures");
+    db.makeQuery('UPDATE players SET adventures_left = adventures_left + 1 WHERE adventures_left < $1', [constants.adventuresMax]);
+    setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
+}
+
+
+var refreshBosses = () => {
+    console.log("Refresh Bosses");
+    db.makeQuery('UPDATE players SET bosses_left = bosses_left + 1 WHERE bosses_left < $1', [constants.bossesMax]);
+    setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
 }
 
 
@@ -54,9 +62,9 @@ var rotatingShop = async () => {
 
 var initializePeriodic = async () => {
     await delay(10*1000);
-    setTimeout(refreshFlasks, 24 * 60 * 60 * 1000);
+    setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
+    setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
 }
 
-module.exports.refreshFlasks = refreshFlasks;
 module.exports.initializePeriodic = initializePeriodic;

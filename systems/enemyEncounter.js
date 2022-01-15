@@ -8,15 +8,15 @@ const {randomInt} = require('../utils/randomInt');
 const {generatePlayers, generateEnemy, generatePlayerInfos, generateBattle, updateInventory} = require('./encounterHelper');
 const {deleteMessage} = require('../utils/deleteMessage');
 
-var cleanup = (pkg) => {
+var cleanup = (pkg, name) => {
     // Cleanup
-    if (saved_messages.get_message('encounterMain', pkg.msg.id) != null) {
+    if (saved_messages.get_message(name+'Main', pkg.msg.id) != null) {
         pkg.players.forEach(player => {
-            deleteMessage(player.weapons.msg, 'encounterPlayer');
-            deleteMessage(player.armors.msg, 'encounterPlayer');
+            deleteMessage(player.weapons.msg, name+'Player');
+            deleteMessage(player.armors.msg, name+'Player');
         });
 
-        deleteMessage(pkg.msg, 'encounterMain');
+        deleteMessage(pkg.msg, name+'Main');
     }
 }
 
@@ -50,29 +50,29 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos) 
 
     // Register messages
     players.forEach(player => {
-        saved_messages.add_message('encounterPlayer', player.weapons.msg.id, mainMsg.id);
-        saved_messages.add_message('encounterPlayer', player.armors.msg.id, mainMsg.id);
+        saved_messages.add_message(command.name+'Player', player.weapons.msg.id, mainMsg.id);
+        saved_messages.add_message(command.name+'Player', player.armors.msg.id, mainMsg.id);
     });
 
     console.log(players);
-    saved_messages.add_message('encounterMain', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
+    saved_messages.add_message(command.name+'Main', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
         players: players, enemies: enemyInfosInGame, msg: mainMsg});
     
     // Cleanup messages
     await delay(1000*command.cooldown);
-    if (saved_messages.get_message('encounterMain', mainMsg.id) != null)
-        cleanup(saved_messages.get_message('encounterMain', mainMsg.id), 'encounter');
+    if (saved_messages.get_message(command.name+'Main', mainMsg.id) != null)
+        cleanup(saved_messages.get_message(command.name+'Main', mainMsg.id), command.name);
 };
 
 
 
-var confirmEnemyEncounter = async (reaction, user, pkg, added) => {
+var confirmEnemyEncounter = async (reaction, user, pkg, added, command) => {
     let msg = reaction.message;
     let emoji = reaction.emoji.toString();
 
     // Cancel encounter
     if (emoji === '❌' && user.id === pkg.hostID) {
-        cleanup(pkg, 'encounter');
+        cleanup(pkg, command.name);
         cooldownControl.resetCooldown(pkg.originalCommand, pkg.originalMsg.author.id);
         return;
     }
@@ -93,7 +93,7 @@ var confirmEnemyEncounter = async (reaction, user, pkg, added) => {
     if (!confirmed)
         return;
 
-    cleanup(pkg, 'encounter');
+    cleanup(pkg, command.name);
 
     // Player
     let playerInstances = generatePlayers(pkg.players);
@@ -117,20 +117,21 @@ var confirmEnemyEncounter = async (reaction, user, pkg, added) => {
 }
 
 
-var onReaction = async (reaction, user, added) => {
+var onReaction = async (reaction, user, added, command) => {
     let msg = reaction.message;
     let confirmID = msg.id;
 
-    if (!added)
+    if (added == false)
         return;
 
+
     // Secondary index to main package (player -> package)
-    let index = saved_messages.get_message('encounterPlayer', msg.id);
+    let index = saved_messages.get_message(command.name + 'Player', msg.id);
     if (index)
         confirmID = index;
 
     // Main package - a single encounter
-    let pkg = saved_messages.get_message('encounterMain', confirmID);
+    let pkg = saved_messages.get_message(command.name + 'Main', confirmID);
     if (pkg) {
         let playerIdx = pkg.players.findIndex(player => {return player.info.userid == user.id});
         if (playerIdx == -1)
@@ -145,7 +146,7 @@ var onReaction = async (reaction, user, added) => {
         
         // Confirm reaction
         if (pkg.msg.id == msg.id) {
-            confirmEnemyEncounter(reaction, user, pkg, added);
+            confirmEnemyEncounter(reaction, user, pkg, added, command);
             return;
         }
     }

@@ -5,6 +5,7 @@ const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
 const saved_messages = require('../utils/saved_messages');
 const party = require('./party');
+const constants = require('../data/constants');
 
 // Exports
 module.exports = {
@@ -53,6 +54,14 @@ module.exports = {
             return;
         }
 
+        let player = (await db.makeQuery(`SELECT bosses_left FROM players WHERE userid = $1`, [msg.author.id])).rows[0];
+        if (player.bosses_left < 1) {
+            msg.reply("You are out of conquests right now! Wait a bit before going on a conquest again.");
+            return;
+        } else {
+            msg.reply(`Conquests left: ${player.bosses_left-1}/${constants.bossesMax}. Regenerates one every ${constants.bossesCooldown} hours.`);
+            db.makeQuery(`UPDATE players SET bosses_left = bosses_left - 1 WHERE userid = $1`, [msg.author.id]);
+        }
 
         let result = await db.makeQuery(`SELECT * FROM players WHERE userid = ANY($1)`, [partyMembers]);
         if (result.rowCount < partyMembers.length) {
@@ -64,7 +73,7 @@ module.exports = {
         for (let i = 0; i < partyMembers.length; i++)
             if (partyMembers[i].level < bestMatch.min_level) {
                 cooldownControl.resetCooldown(module.exports, msg.author.id);
-                msg.reply("Someone in your party doesn't have enough levels to participate in this adventure...");
+                msg.reply("Someone in your party doesn't have enough levels to participate in this conquest...");
                 return;
             }
 
@@ -75,7 +84,7 @@ module.exports = {
     },
 
     reaction: async (reaction, user, added) => {
-        encounter.onReaction(reaction, user, added);
+        encounter.onReaction(reaction, user, added, module.exports);
     },
 
     permission: (msg) => true

@@ -52,6 +52,7 @@ module.exports = {
         }
 
         if (player.adventures_left < 1) {
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply("You are out of adventures right now! Wait a bit before going on an adventure again.");
             return;
         } else {

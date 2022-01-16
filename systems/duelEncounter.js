@@ -1,10 +1,11 @@
+const db = require('../external/database.js');
 const saved_messages = require('../utils/saved_messages');
 const Discord = require('discord.js');
 const rewards = require('../systems/rewards');
-const cooldownControl = require('../utils/cooldownControl');
 const { delay } = require('../utils/delay.js');
 const {generatePlayers, generatePlayerInfos, generateBattle, updateInventory} = require('./encounterHelper');
 const {deleteMessage} = require('../utils/deleteMessage');
+const {asyncForEach} = require('../utils/asyncForEach');
 
 var cleanup = (pkg) => {
     // Cleanup
@@ -33,12 +34,11 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     .setColor(0x1d51cc)
     .setTitle("Duel - " + leftPlayers[0].info.title + " VS " + rightPlayers[0].info.title)
     .setDescription("The challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
-    .setFooter("Combatants: Press ✅ when ready\nChallenger: Press ❌ to cancel");
+    .setFooter("Combatants: Press ✅ when ready");
 
     // Create summary message
     let mainMsg = await msg.channel.send(embed);
     mainMsg.react('✅');
-    mainMsg.react('❌');
 
     // Register messages
     registerPlayer = (player) => {
@@ -50,7 +50,7 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     rightPlayers.forEach(registerPlayer);
 
     saved_messages.add_message('duelMain', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
-        leftPlayers: leftPlayers, rightPlayers: rightPlayers, msg: mainMsg, bet: bet});
+        leftPlayers: leftPlayers, rightPlayers: rightPlayers, challengerIDs: leftPlayerIDs, challengedIDs: rightPlayerIDs, msg: mainMsg, bet: bet});
     
     // Cleanup messages
     await delay(1000*60*30);
@@ -70,13 +70,6 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     let msg = reaction.message;
     let emoji = reaction.emoji.toString();
 
-    // Cancel encounter
-    if (emoji === '❌' && user.id === pkg.hostID) {
-        cleanup(pkg);
-        cooldownControl.resetCooldown(pkg.originalCommand, pkg.originalMsg.author.id);
-        return;
-    }
-
     // Confirm encounter
     if (emoji !== '✅')
         return;
@@ -95,9 +88,9 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     if (!confirmed)
         return;
 
-    cleanup(pkg, 'duel');
-
     // Player
+    db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE ANY($1)`, [pkg.challengerIDs, pkg.bet]);
+    db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE ANY($1)`, [pkg.challengedIDs, pkg.bet]);
     let leftInstances = generatePlayers(pkg.leftPlayers);
     let rightInstances = generatePlayers(pkg.rightPlayers);
 
@@ -105,9 +98,15 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     let endgame = await generateBattle(leftInstances, rightInstances, msg, true, true);
 
     if (endgame == 1)
-        rewards.giveCoins(pkg.challengerID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+        await asyncForEach(pkg.challengerIDs, async challengerID => {
+            await rewards.giveCoins(challengerID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+        });
     else if (endgame == 2)
-        rewards.giveCoins(pkg.challengedID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+        await asyncForEach(pkg.challengedIDs, async challengedID => {
+            await rewards.giveCoins(challengedID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+        });
+
+    cleanup(pkg, 'duel');
 }
 
 

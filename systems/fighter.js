@@ -18,7 +18,7 @@ module.exports.Fighter = class {
     }
 
     takeDamage(damage) {
-        let effectiveDamage = Math.max(0, damage - this.plate);
+        let effectiveDamage = Math.max(1, damage - this.plate);
         let healthDamage = Math.max(0, effectiveDamage - this.shield);
         this.shield = Math.max(0, this.shield - effectiveDamage);
         this.health = Math.max(0, this.health - healthDamage);

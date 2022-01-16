@@ -115,7 +115,8 @@ module.exports.Battle = class {
     }
     
     async round(leftBattleStatus, rightBattleStatus) {
-        console.log(`ROUND ${this.rounds}`);
+        if (this.log[this.log.length-1].startsWith("**Round"))
+            this.log.push(`Nothing happened...`);
         this.log.push(`**ROUND ${this.rounds}**`);
         this.sideRound(this.leftFighters, this.rightFighters, !this.leftArePlayers);
         this.sideRound(this.rightFighters, this.leftFighters, !this.rightArePlayers);
@@ -180,9 +181,9 @@ module.exports.Battle = class {
     
             let rand = Math.random()*100;
             if (defender.evasionSum > rand) {
-                this.log.push(`**${defender.title}** has evaded the attack! Chance: **${defender.evasionSum}%** > **${rand.toFixed(0)}%**`);
+                this.log.push(`**${defender.title}** has evaded (**${defender.evasionSum}%** evasion chance) **${attacker.title}**'s **${weapon.title}**! `
+                + `Their evasion chance is now at **${defender.evasionSum/2}%**.`);
                 defender.evasionSum /= 2;
-                this.log.push(`**${defender.title}**'s evasion chance is now at **${defender.evasionSum}%**.`);
                 return;
             }
     
@@ -192,7 +193,7 @@ module.exports.Battle = class {
             }
     
             if (weapon.effect !== null) {
-                let logMessage = weapon.effect.apply(weapon.damage, attacker, defender);
+                let logMessage = weapon.effect.apply(weapon.damage, attacker, defender, weapon.title);
                 if (logMessage !== null)
                     this.log.push(logMessage);
             }

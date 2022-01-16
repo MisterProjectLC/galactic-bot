@@ -99,7 +99,7 @@ let onListReaction = (reaction, user, info, playerTitle, objectName, lineBuilder
             else
                 list_description = `You already have 2 ${objectName}s selected!`;
         } else
-            info.selected.splice(objectNumber, 1);
+            info.selected.splice(selectedIndex, 1);
     }
      
     // Update embed

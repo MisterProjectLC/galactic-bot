@@ -1,6 +1,6 @@
-CREATE OR REPLACE FUNCTION create_enemy(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iplate int, iregen int, ievasion int, iweapon text, idamage int, irate int) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION create_enemy(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iplate int, iregen int, ievasion int, iweapon text, idamage int, irate float) RETURNS BOOLEAN AS $$
 BEGIN
-	INSERT INTO weapons(title, damage, rate, in_shop, enemy_weapon) VALUES (iweapon, idamage, irate, false, true);
+	INSERT INTO weapons(title, damage_per_level, rate, in_shop, enemy_weapon) VALUES (iweapon, idamage, irate, false, true);
 	INSERT INTO enemies(title, given_xp, given_coins, weapon) SELECT ititle, igiven_xp, igiven_coins, weapons.id
 	FROM weapons WHERE weapons.title = iweapon;
 	UPDATE entities SET health = ihealth, shield = ishield, plate = iplate, regen = iregen, evasion = ievasion WHERE id = (SELECT entity FROM enemies WHERE title = ititle);
@@ -9,9 +9,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION create_enemy_effect(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iplate int, iregen int, ievasion int, iweapon text, idamage int, irate int, ieffect text) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION create_enemy_effect(ititle text, igiven_xp int, igiven_coins int, ihealth int, ishield int, iplate int, iregen int, ievasion int, iweapon text, idamage int, irate float, ieffect text) RETURNS BOOLEAN AS $$
 BEGIN
-	INSERT INTO weapons(title, damage, rate, in_shop, enemy_weapon, effect) SELECT iweapon, idamage, irate, false, true, effects.id FROM effects WHERE effects.title ilike ieffect;
+	INSERT INTO weapons(title, damage_per_level, rate, in_shop, enemy_weapon, effect) SELECT iweapon, idamage, irate, false, true, effects.id FROM effects WHERE effects.title ilike ieffect;
 	INSERT INTO enemies(title, given_xp, given_coins, weapon) SELECT ititle, igiven_xp, igiven_coins, weapons.id
 	FROM weapons WHERE weapons.title = iweapon;
 	UPDATE entities SET health = ihealth, shield = ishield, plate = iplate, regen = iregen, evasion = ievasion WHERE id = (SELECT entity FROM enemies WHERE title = ititle);
@@ -134,7 +134,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION create_armor(ititle text, ihealth int, ishield int, iplate int, iregen int, ievasion int, ilevel int, icost int) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION create_armor(ititle text, ihealth int, ishield int, iplate int, iregen int, ievasion float, ilevel int, icost int) RETURNS BOOLEAN AS $$
 BEGIN
 	INSERT INTO armors(title, health, shield, plate, regen, evasion, min_level, cost_per_level)
 	VALUES (ititle, ihealth, ishield, iplate, iregen, ievasion, ilevel, icost);
@@ -142,7 +142,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION create_armor_effect(ititle text, ihealth int, ishield int, iplate int, iregen int, ievasion int, ieffect text, ilevel int, icost int) RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION create_armor_effect(ititle text, ihealth int, ishield int, iplate int, iregen int, ievasion float, ieffect text, ilevel int, icost int) RETURNS BOOLEAN AS $$
 BEGIN
 	INSERT INTO armors(title, health, shield, plate, regen, evasion, effect, min_level, cost_per_level)
 	SELECT ititle, ihealth, ishield, iplate, iregen, ievasion, effects.id, ilevel, icost

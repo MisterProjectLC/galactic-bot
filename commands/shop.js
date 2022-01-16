@@ -53,8 +53,11 @@ var buyFromShop = async (com_args, msg) => {
     let purchaseAmount = 1;
     if (com_args.length > 1) {
         let p = parseInt(com_args[1]);
-        if (p === p)
-            purchaseAmount = p;
+        if (p !== p) {
+            msg.reply(errors.invalidArgs);
+            return;
+        }
+        purchaseAmount = p;
     }
 
     let weapons = [];
@@ -73,7 +76,7 @@ var buyFromShop = async (com_args, msg) => {
 
     //await Promise.all([weapon_promise, armor_promise]);
 
-    if (shopIndex >= weapons.length + armors.length || shopIndex < 0) {
+    if (shopIndex >= weapons.length + armors.length || shopIndex < 0 || purchaseAmount <= 0) {
         msg.reply(errors.invalidArgs);
         return;
     }
@@ -82,7 +85,7 @@ var buyFromShop = async (com_args, msg) => {
     let cost = item.cost_per_level;
     let coins = 0;
 
-    if (item.level != null && item.level + purchaseAmount > 100) {
+    if ((item.level != null ? item.level : 0) + purchaseAmount > 100) {
         msg.reply("Items can't go over Level 100!");
         return;
     }
@@ -153,7 +156,7 @@ module.exports = {
             }
             msg.edit("Purchase confirmed!");
             
-            db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [msg.author.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
+            db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [user.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
             if (pkg.isWeapon) {
                 db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
                 console.log("Weapon bought!");

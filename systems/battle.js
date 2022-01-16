@@ -37,15 +37,15 @@ module.exports.Battle = class {
             embed = embed.setThumbnail(fighter.image);
 
         embed = embed
-        .addField(`**Health**`, `${healthbar(fighter.health, fighter.max_health)} ${fighter.health}/${fighter.max_health}
-        **Shields**\n${healthbar(fighter.shield, fighter.max_shield)} ${fighter.shield}/${fighter.max_shield}`, true)
+        .addField(`**Health**`, `${healthbar(fighter.health, fighter.maxHealth, fighter.necroHealth)} ${fighter.health}/${fighter.maxHealth-fighter.necroHealth}
+        **Shields**\n${healthbar(fighter.shield, fighter.maxShield)} ${fighter.shield}/${fighter.maxShield}`, true)
         .addField(`**Stats**`, `Plate: ${fighter.plate}\nRegen: ${fighter.regen}\nEvasion: ${fighter.evasion}`, true);
         
-        let weapon_list = "";
+        let weaponList = "";
         fighter.weapons.forEach(weapon => {
-            weapon_list += `**${weapon.title}**\nDamage: ${weapon.damage}\nRate of Attack: ${weapon.rate} per turn\nEffect: ${weapon.effect !== null ? weapon.effect.title : "None"}\n`;
+            weaponList += `**${weapon.title}**\nDamage: ${weapon.damage}\nRate of Attack: ${weapon.rate} per turn\nEffect: ${weapon.effect !== null ? weapon.effect.title : "None"}\n`;
         });
-        embed = embed.addField(`**Weapons**`, weapon_list.length > 0 ? weapon_list : "-", true);
+        embed = embed.addField(`**Weapons**`, weaponList.length > 0 ? weaponList : "-", true);
         
         return embed;
     }
@@ -140,36 +140,35 @@ module.exports.Battle = class {
     individualRound(individual, opponents, attackAll) {
         individual.evasionSum += individual.evasion;
         if (individual.evasion > 0)
-            this.log.push(`**${defender.title}**'s evasion chance increased by **${individual.evasion}%**. It is now at **${defender.evasionSum}%**.`);
+            this.log.push(`**${individual.title}**'s evasion chance increased by **${individual.evasion}%**. It is now at **${individual.evasionSum}%**.`);
+
+        if (individual.shocked)
+            this.log.push(`**${individual.title}** is **stunned**!`);
 
         individual.weapons.forEach(weapon => {
             console.log("Carregando com " + weapon.title);
             if (weapon.charge < 1)
                 weapon.charge += weapon.rate;
     
-            if (individual.stunned)
-                this.log.push(`**${individual.title}** is **stunned**!`);
-            else {
-                let alreadyAttacked = false;
-                opponents.forEach(opponent => {
-                    if (alreadyAttacked && !attackAll)
-                        return;
-
-                    if (opponent.health > 0) {
-                        this.attack(individual, weapon, opponent);
-                        alreadyAttacked = true;
-                    }
-                });
+            if (individual.shocked)
+                return;
             
-                weapon.charge = weapon.charge % 1;
-            }
+            let alreadyAttacked = false;
+            opponents.forEach(opponent => {
+                if (alreadyAttacked && !attackAll)
+                    return;
+
+                if (opponent.health > 0) {
+                    this.attack(individual, weapon, opponent);
+                    alreadyAttacked = true;
+                }
+            });
+            
+            weapon.charge = weapon.charge % 1;
         });
 
-        if (!individual.antihealed)
-            individual.health = Math.min(individual.max_health, individual.health + individual.regen);
-    
-        individual.stunned = false;
-        individual.antihealed = false;
+        individual.heal(individual.regen);
+        individual.shocked = false;
     }
     
     
@@ -182,18 +181,20 @@ module.exports.Battle = class {
             let rand = Math.random()*100;
             if (defender.evasionSum > rand) {
                 this.log.push(`**${defender.title}** has evaded the attack! Chance: **${defender.evasionSum}%** > **${rand.toFixed(0)}%**`);
-                defender.evasionSum = Math.max(0, defender.evasionSum-defender.evasion);
+                defender.evasionSum /= 2;
                 this.log.push(`**${defender.title}**'s evasion chance is now at **${defender.evasionSum}%**.`);
                 return;
             }
     
-            let effective_damage = defender.takeDamage(weapon.damage);
-            this.log.push(`**${attacker.title}** dealt **${effective_damage} damage** to **${defender.title}** using **${weapon.title}**!`);
+            if (weapon.effect === null || !weapon.effect.cancelDamage) {
+                let effectiveDamage = defender.takeDamage(weapon.damage);
+                this.log.push(`**${attacker.title}** dealt **${effectiveDamage} damage** to **${defender.title}** using **${weapon.title}**!`);
+            }
     
-            rand = Math.random()*100;
-            if (weapon.effect !== null && weapon.effect.level > rand) {
-                this.log.push(`**${attacker.title}** applied **${weapon.effect.title}** to **${defender.title}**! Chance: **${weapon.effect.level}%** > **${rand.toFixed(0)}%**`);
-                weapon.effect.apply(weapon.damage, attacker, defender);
+            if (weapon.effect !== null) {
+                let logMessage = weapon.effect.apply(weapon.damage, attacker, defender);
+                if (logMessage !== null)
+                    this.log.push(logMessage);
             }
         }
     }

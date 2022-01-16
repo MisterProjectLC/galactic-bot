@@ -44,18 +44,19 @@ module.exports = {
             return;
         }
         let player = result.rows[0];
+
+        if (player.level < bestMatch.min_level) {
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
+            msg.reply("You don't have enough levels to participate in this adventure...");
+            return;
+        }
+
         if (player.adventures_left < 1) {
             msg.reply("You are out of adventures right now! Wait a bit before going on an adventure again.");
             return;
         } else {
             msg.reply(`Adventures left: ${player.adventures_left-1}/${constants.adventuresMax}. Regenerates one every ${constants.adventuresCooldown} hours.`);
             db.makeQuery(`UPDATE players SET adventures_left = adventures_left - 1 WHERE userid = $1`, [msg.author.id]);
-        }
-
-        if (player.level < bestMatch.min_level) {
-            cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply("You don't have enough levels to participate in this adventure...");
-            return;
         }
 
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 

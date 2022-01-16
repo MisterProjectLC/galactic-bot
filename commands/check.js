@@ -1,11 +1,7 @@
-const rewards = require('../systems/rewards');
 const db = require('../external/database.js');
 const Discord = require('discord.js');
-const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
-const { delay } = require('../utils/delay.js');
-
-const LIMIT_PER_PAGE = 6;
+const {capitalize} = require('../utils/capitalize');
 
 // Exports
 module.exports = {
@@ -63,9 +59,9 @@ module.exports = {
                 Min Level to buy: ${weapons[i].min_level}
                 Your level with this: ${weapons[i].level !== null ? weapons[i].level : 0}`, true)
             .addField(`Stats`,
-                `Damage: ${weapons[i].damage_per_level}
+                `Damage per Level: ${weapons[i].damage_per_level}
                 Rate of Attack: ${weapons[i].rate}
-                Effect: ${weapons[i].effect_title !== null ? weapons[i].effect_title : "None"}`, true);
+                Effect: ${weapons[i].effect_title !== null ? capitalize(weapons[i].effect_title) : "None"}`, true);
 
         } else if (i < weapons.length + armors.length) {
             i -= weapons.length;
@@ -80,7 +76,7 @@ module.exports = {
                 Plate: ${armors[i].plate}
                 Regen: ${armors[i].regen}
                 Evasion: ${armors[i].evasion}
-                Resistance to Effect: ${armors[i].effect_title !== null ? armors[i].effect_title : "None"}`, true);
+                Resistance to Effect: ${armors[i].effect_title !== null ? capitalize(armors[i].effect_title) : "None"}`, true);
         }
 
         msg.reply(embed);

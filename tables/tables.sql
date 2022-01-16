@@ -49,8 +49,8 @@ CREATE TABLE playersWeapons (
 	weapon_id int,
 	level int,
 	PRIMARY KEY (player_id, weapon_id),
-	FOREIGN KEY (player_id) REFERENCES players(id),
-	FOREIGN KEY (weapon_id) REFERENCES weapons(id)
+	FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+	FOREIGN KEY (weapon_id) REFERENCES weapons(id) ON DELETE CASCADE
 );
 
 CREATE VIEW eWeapons AS (
@@ -85,8 +85,8 @@ CREATE TABLE playersArmors (
 	armor_id int,
 	level int,
 	PRIMARY KEY (player_id, armor_id),
-	FOREIGN KEY (player_id) REFERENCES players(id),
-	FOREIGN KEY (armor_id) REFERENCES armors(id)
+	FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+	FOREIGN KEY (armor_id) REFERENCES armors(id) ON DELETE CASCADE
 );
 
 CREATE TABLE enemies (
@@ -107,8 +107,8 @@ CREATE TABLE enemiesEffects (
 	effect_id int,
 	level int,
 	PRIMARY KEY (enemy_id, effect_id),
-	FOREIGN KEY (enemy_id) REFERENCES enemies(id),
-	FOREIGN KEY (effect_id) REFERENCES effects(id)
+	FOREIGN KEY (enemy_id) REFERENCES enemies(id) ON DELETE CASCADE,
+	FOREIGN KEY (effect_id) REFERENCES effects(id) ON DELETE CASCADE
 )
 
 CREATE VIEW eEnemies AS (
@@ -131,8 +131,8 @@ CREATE TABLE enemiesAdventures (
 	enemy_id int,
 	adventure_id int,
 	PRIMARY KEY (enemy_id, adventure_id),
-	FOREIGN KEY (enemy_id) REFERENCES enemies(id),
-	FOREIGN KEY (adventure_id) REFERENCES adventures(id)
+	FOREIGN KEY (enemy_id) REFERENCES enemies(id) ON DELETE CASCADE,
+	FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE
 );
 
 
@@ -147,8 +147,8 @@ CREATE TABLE enemiesConquests (
 	enemy_id int,
 	conquest_id int,
 	PRIMARY KEY (enemy_id, conquest_id),
-	FOREIGN KEY (enemy_id) REFERENCES enemies(id),
-	FOREIGN KEY (conquest_id) REFERENCES conquests(id)
+	FOREIGN KEY (enemy_id) REFERENCES enemies(id) ON DELETE CASCADE,
+	FOREIGN KEY (conquest_id) REFERENCES conquests(id) ON DELETE CASCADE
 );
 
 CREATE TABLE timers (

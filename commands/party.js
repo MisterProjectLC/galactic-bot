@@ -1,6 +1,7 @@
 const db = require('../external/database.js');
 const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
+const errors = require('../data/errors');
 const {removeReactions} = require('../utils/removeReactions');
 
 const emojiNumbers = ['2️⃣', '3️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
@@ -38,7 +39,7 @@ module.exports = {
     "#party 8: create a party of up to 8 players. This is the maximum size of any party."],
     min: 0, max: 1, cooldown: 5,
     execute: async (com_args, msg) => {
-        // Get shop index
+        // Get party size
         let partySize = 4;
         if (com_args > 0) {
             partySize = parseInt(com_args[0]);

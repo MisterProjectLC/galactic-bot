@@ -2,9 +2,10 @@ module.exports.Fighter = class {
     constructor(title, image, health, shield, plate, regen, evasion, weapons) {
         this.title = title;
         this.image = image;
-        this.max_health = health;
+        this.maxHealth = health;
+        this.necroHealth = 0;
         this.health = health;
-        this.max_shield = shield;
+        this.maxShield = shield;
         this.shield = shield;
         this.plate = plate;
         this.regen = regen;
@@ -22,5 +23,9 @@ module.exports.Fighter = class {
         this.shield = Math.max(0, this.shield - effectiveDamage);
         this.health = Math.max(0, this.health - healthDamage);
         return effectiveDamage;
+    }
+
+    heal(heal) {
+        this.health = Math.min(this.maxHealth - this.necroHealth, this.health + heal);
     }
 }

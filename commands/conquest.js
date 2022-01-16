@@ -73,6 +73,7 @@ module.exports = {
 
         let player = (await db.makeQuery(`SELECT bosses_left FROM players WHERE userid = $1`, [msg.author.id])).rows[0];
         if (player.bosses_left < 1) {
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply("You are out of conquests right now! Wait a bit before going on a conquest again.");
             return;
         } else {

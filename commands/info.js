@@ -4,6 +4,7 @@ const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
 const {removeReactions} = require('../utils/removeReactions');
 const {capitalize} = require('../utils/capitalize');
+const {xpThreshold} = require('../systems/rewards');
 
 const ITENS_PER_VIEWING = 6;
 
@@ -77,7 +78,7 @@ module.exports = {
         .setTitle(player.title)
         .setThumbnail(msg.author.avatarURL())
         .addField('Level', player.level, true)
-        .addField('XP', player.xp, true)
+        .addField('XP', `${player.xp}/${xpThreshold(player.level)}`, true)
         .addField('Coins', player.coins, true);
 
         msg.reply(embed);

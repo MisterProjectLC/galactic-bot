@@ -14,9 +14,9 @@ SELECT create_enemy_effect('Sun Alien', 600, 40, 75, 75, 0, 0, 0, 'Sun Wave', 50
 SELECT create_enemy('Laser Soldier', 600, 40, 60, 120, 0, 0, 0, 'Laser Musket', 30, 1);
 
 SELECT create_enemy_effect('Acid Driller', 2000, 100, 900, 0, 0, 0, 40, 'Acid Drill', 20, 6, 'acid');
-SELECT create_enemy('Plate Guardian', 2000, 100, 500, 0, 50, 0, 0, 'Astrohammer', 200, 0.5);
-SELECT create_enemy_effect('Ice Captain', 2000, 100, 400, 0, 25, 0, 0, 'Twin Glacial', 75, 2, 'freeze');
-SELECT create_enemy_effect('Titan Follower', 2000, 100, 400, 0, 25, 0, 0, 'Firespear', 75, 1, 'fire');
+SELECT create_enemy('Plate Guardian', 2000, 100, 500, 0, 75, 0, 0, 'Astrohammer', 200, 0.5);
+SELECT create_enemy_effect('Ice Captain', 2000, 100, 400, 0, 40, 0, 0, 'Twin Glacial', 75, 2, 'freeze');
+SELECT create_enemy_effect('Titan Follower', 2000, 100, 400, 0, 55, 0, 0, 'Firespear', 75, 1, 'fire');
 SELECT create_enemy_effect('Shock Trooper', 2000, 100, 400, 800, 0, 0, 0, 'Stun Rifle', 60, 1, 'shock');
 
 SELECT create_enemy_effect('The Warden', 6000, 400, 900, 1800, 0, 0, 0, 'Solar Railgun', 650, 0.25, 'plasma');

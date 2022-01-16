@@ -1,43 +1,53 @@
 
 const effectList = {
-    fire: (damage, attacker, defender) => {
-        defender.health = Math.max(0, defender.health - damage);
-        return `**${attacker.title}** dealt **${damage} Fire damage** to **${defender.title}**'s Health!`;
+    fire: (damage, attacker, defender, weaponTitle) => {
+        let halfDamage = Math.round(Math.max(1, (damage  - defender.plate)/2));
+        let leftoverDamage = Math.max(0, halfDamage - defender.shield);
+        let shieldDamage = halfDamage - leftoverDamage;
+        defender.shield = defender.shield - shieldDamage;
+
+        let healthDamage = leftoverDamage + halfDamage;
+        defender.health = Math.max(0, defender.health - healthDamage);
+
+        let shieldMessage = `**${attacker.title}** dealt **${shieldDamage} damage** to **${defender.title}**'s Shields using **${weaponTitle}**!`;
+        let healthMessage = `**${attacker.title}** dealt **${healthDamage} Fire damage** to **${defender.title}**'s Health using **${weaponTitle}**!`;
+        return (shieldDamage > 0) ? shieldMessage + '\n' + healthMessage : healthMessage;
     },
 
     acid: (damage, attacker, defender) => {
         let log = defender.plate > 0;
-        let acidDamage = Math.max(1, Math.round(damage/2));
+        let acidDamage = Math.max(1, Math.round(damage/8));
         defender.plate = Math.max(0, defender.plate - acidDamage);
-        return log ? `**${attacker.title}** dealt **${acidDamage} Acid damage** to **${defender.title}**'s Plate! It is now at ${defender.plate}.` : null;
+        return log ? `**${attacker.title}** dealt **${acidDamage} Acid damage** to **${defender.title}**'s **Plate**! It is now at **${defender.plate}**.` : null;
     },
 
     plasma: (damage, attacker, defender) => {
-        console.log("PLASMA");
         let log = defender.shield > 0;
         let plasmaDamage = Math.max(1, damage - defender.plate);
         defender.shield = Math.max(0, defender.shield - plasmaDamage);
-        return log ? `**${attacker.title}** dealt **${plasmaDamage} extra Plasma damage** to **${defender.title}**'s Shield!` : null;
+        return log ? `**${attacker.title}** dealt **${plasmaDamage} extra Plasma damage** to **${defender.title}**'s **Shield**!` : null;
     },
 
     freeze: (damage, attacker, defender) => {
         let log = defender.evasion > 0;
-        let freezeDamage = Math.max(1, (damage - defender.plate));
-        defender.evasion = Math.max(0, defender.evasion - freezeDamage);
-        return log ? `**${attacker.title}** dealt **${freezeDamage} Ice damage** to **${defender.title}**'s Evasion! It is now at **${defender.evasion}%**.` : null;
+        let freezeDamage = Math.max(1, Math.round((damage - defender.plate)/4));
+        defender.evasionSum = Math.max(0, defender.evasionSum - freezeDamage);
+        return log ? `**${attacker.title}** dealt **${freezeDamage} Ice damage** to **${defender.title}**'s Evasion! It is now at **${defender.evasionSum}%**.` : null;
     },
 
     shock: (damage, attacker, defender) => {
         let rand = Math.random()*100;
-        if (rand < Math.max(40, damage/Math.max(1, defender.plate))) {
+        let chance = Math.min(30, damage/Math.max(1, defender.plate));
+        if (rand < chance) {
             defender.shocked = true;
-            return  `**${attacker.title}** stunned **${defender.title}** using Shock!`;
+            return  `**${attacker.title}** stunned **${defender.title}** using Shock (${chance}% shock chance)!`;
         }
         return null;
     },
 
     virus: (damage, attacker, defender) => {
-        let necroDamage = Math.max(0, (damage - defender.shield) - defender.plate);
+        let necroDamage = Math.max(1, damage - defender.plate);
+        necroDamage = Math.max(0, necroDamage - defender.shield);
         let log = necroDamage > 0;
         defender.necroHealth = Math.min(defender.maxHealth, defender.necroHealth + necroDamage);
         return  log ? `**${attacker.title}** necroed **${necroDamage} Health** ** from **${defender.title}**!` : null;

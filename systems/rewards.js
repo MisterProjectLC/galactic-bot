@@ -6,12 +6,12 @@ var xpThreshold = (level) => {
     return Math.round(1000 * Math.pow(1.03, level-1));
 }
 
-var giveXP = async (user, xp, channel, command) => {
-    await db.makeQuery(`SELECT xp, level FROM players WHERE userid = $1`, [user]).then(async result => {
+var giveXP = async (userID, xp, channel, command) => {
+    await db.makeQuery(`SELECT xp, level FROM players WHERE userid = $1`, [userID]).then(async result => {
         if (result.rowCount < 1) {
-            channel.send(`<@${user}>, ` + errors.unregisteredPlayer);
+            channel.send(`<@${userID}>, ` + errors.unregisteredPlayer);
             if (command)
-                cooldownControl.resetCooldown(command, user);
+                cooldownControl.resetCooldown(command, userID);
             return;
         }
         
@@ -30,38 +30,38 @@ var giveXP = async (user, xp, channel, command) => {
             levelup = true;
             console.log(`LEVEL UP ${level}`);
             if (level >= 100) {
-                channel.send(`<@${user}>, CONGRATULATIONS! You have achieved Level ${level}!`);
-                db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [user, (new Date().getTime())]);
+                channel.send(`<@${userID}>, CONGRATULATIONS! You have achieved Level ${level}!`);
+                db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [userID, (new Date().getTime())]);
                 break;
 
             } else {
                 threshold = xpThreshold(level);
-                channel.send(`<@${user}>, you have leveled up! You are now at Level ${level} and have ${newXP}XP.`);
+                channel.send(`<@${userID}>, you have leveled up! You are now at **Level ${level}** and have **${newXP}XP**.`);
             }
         }
 
         if (!levelup)
-            channel.send(`<@${user}>, you have received ${xp}XP! You now have ${newXP}XP.`);
+            channel.send(`<@${userID}>, you have received ${xp}XP! You now have ${newXP}XP.`);
         
-        await db.makeQuery(`UPDATE players SET xp = $2, level = $3 WHERE userid = $1`, [user, newXP, level]);
-        await db.makeQuery(`UPDATE entities SET health = health + 4 WHERE id = (SELECT entity FROM players WHERE userid = $1)`, [user]);
+        await db.makeQuery(`UPDATE players SET xp = $2, level = $3 WHERE userid = $1`, [userID, newXP, level]);
+        await db.makeQuery(`UPDATE entities SET health = health + 4 WHERE id = (SELECT entity FROM players WHERE userid = $1)`, [userID]);
     });
 }
 
-var giveCoins = async (user, coins, channel, command) => {
+var giveCoins = async (userID, coins, channel, command) => {
     if (coins == 0)
         return;
 
-    await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [user]).then(async result => {
+    await db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [userID]).then(async result => {
         if (result.rowCount < 1) {
-            channel.send(`<@${user}>, ` + errors.unregisteredPlayer);
+            channel.send(`<@${userID}>, ` + errors.unregisteredPlayer);
             if (command)
-                cooldownControl.resetCooldown(command, user);
+                cooldownControl.resetCooldown(command, userID);
             return;
         }
-        channel.send(`<@${user}>, You have received ${coins} coins! You now have ${result.rows[0].coins+coins} coins.`);
+        channel.send(`<@${userID}>, You have received **${coins} coins**! You now have **${result.rows[0].coins+coins} coins**.`);
 
-        await db.makeQuery(`UPDATE players SET coins = coins + $2 WHERE userid = $1`, [user, coins]);
+        await db.makeQuery(`UPDATE players SET coins = coins + $2 WHERE userid = $1`, [userID, coins]);
     });
 }
 

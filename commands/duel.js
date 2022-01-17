@@ -1,9 +1,11 @@
 const db = require('../external/database.js');
 const Discord = require('discord.js');
+const rewards = require('../systems/rewards');
 const errors = require('../data/errors');
 const encounter = require('../systems/duelEncounter');
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
+const {asyncForEach} = require('../utils/asyncForEach');
 
 function getUserIDFromMention(mention) {
 	if (!mention) return;
@@ -19,6 +21,20 @@ function getUserIDFromMention(mention) {
     return mention;
 }
 
+
+var payBet = async (endgame, pkg) => {
+    console.log("PAYBET");
+    if (endgame == 1)
+        await asyncForEach(pkg.challengerIDs, async challengerID => {
+            await rewards.giveCoins(challengerID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+        });
+    else if (endgame == 2)
+        await asyncForEach(pkg.challengedIDs, async challengedID => {
+            await rewards.giveCoins(challengedID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+        });
+}
+
+
 // Exports
 module.exports = {
     name: "duel",
@@ -33,6 +49,12 @@ module.exports = {
             msg.reply("Couldn't find the challenged player...");
             return;
         }
+
+        if (msg.author.id == challengedID) {
+            msg.reply("Hey, you can't duel yourself!");
+            return;
+        }
+
         
         let bet = 0;
         if (com_args.length >= 2) {
@@ -86,7 +108,7 @@ module.exports = {
         if (pkg && (emoji === '✅' || emoji === '❌') && user.id === pkg.challengedID && msg.id === pkg.confirmMsg.id) {
             deleteMessage(msg, 'duelConfirmation');
             if (emoji === '✅') {
-                await encounter.generateDuelEncounter(pkg.msg, module.exports, [pkg.challengerID], [pkg.challengedID], pkg.bet);
+                await encounter.generateDuelEncounter(pkg.msg, module.exports, [pkg.challengerID], [pkg.challengedID], pkg.bet, payBet);
             }
             return;
         }

@@ -24,7 +24,7 @@ var cleanup = (pkg) => {
 }
 
 
-var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, bet) => {
+var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, bet, giveReward) => {
     // Players + Create weapons/armor messages
     let leftPlayers = await generatePlayerInfos(leftPlayerIDs, msg);
     let rightPlayers = await generatePlayerInfos(rightPlayerIDs, msg);
@@ -50,15 +50,10 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     rightPlayers.forEach(registerPlayer);
 
     saved_messages.add_message('duelMain', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
-        leftPlayers: leftPlayers, rightPlayers: rightPlayers, challengerIDs: leftPlayerIDs, challengedIDs: rightPlayerIDs, msg: mainMsg, bet: bet});
+        leftPlayers: leftPlayers, rightPlayers: rightPlayers, challengerIDs: leftPlayerIDs, challengedIDs: rightPlayerIDs, msg: mainMsg, 
+        bet: bet, giveReward: giveReward});
     
     // Cleanup messages
-    await delay(1000*60*30);
-    if (saved_messages.get_message('duelMain', mainMsg.id) != null)
-        cleanup(saved_messages.get_message('duelMain', mainMsg.id));
-    await delay(1000*60*30);
-    if (saved_messages.get_message('duelMain', mainMsg.id) != null)
-        cleanup(saved_messages.get_message('duelMain', mainMsg.id));
     await delay(1000*60*30);
     if (saved_messages.get_message('duelMain', mainMsg.id) != null)
         cleanup(saved_messages.get_message('duelMain', mainMsg.id));
@@ -97,16 +92,9 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     // Battle
     let endgame = await generateBattle(leftInstances, rightInstances, msg, true, true);
 
-    if (endgame == 1)
-        await asyncForEach(pkg.challengerIDs, async challengerID => {
-            await rewards.giveCoins(challengerID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
-        });
-    else if (endgame == 2)
-        await asyncForEach(pkg.challengedIDs, async challengedID => {
-            await rewards.giveCoins(challengedID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
-        });
-
-    cleanup(pkg, 'duel');
+    console.log('FIM');
+    await pkg.giveReward(endgame, pkg);
+    cleanup(pkg);
 }
 
 

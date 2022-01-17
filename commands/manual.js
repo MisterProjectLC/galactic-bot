@@ -30,7 +30,7 @@ module.exports = {
         .addField("Freeze", "The defender's Evasion is reduced by 1/4 of this attack's damage.", true)
         .addField("Shock", "This attack's damage divided by the defender's plate equals the chance of stunning the defender, making them lose their attacks (max. 30% chance). Stunned players can still dodge and charge uncharged weapons.", true)
         .addField("Chemical", "Half of this attack's damage heals back the attacker.", true)
-        .addField("Virus", "All damage caused by this attack can't be healed back.", true);
+        .addField("Void", "All damage caused by this attack can't be healed back.", true);
 
 
         msg.reply(embed);

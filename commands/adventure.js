@@ -31,7 +31,7 @@ module.exports = {
         });
 
         m.delete();
-        if (bestScore < 0.5) {
+        if (bestScore < 0.72) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply(errors.invalidArgs);
             return;

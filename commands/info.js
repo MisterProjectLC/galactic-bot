@@ -84,7 +84,7 @@ module.exports = {
         msg.reply(embed);
 
         // REMOVE THIS ---------------------------------------------------
-        //db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [msg.author.id, (new Date().getTime())]);
+        db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [msg.author.id, (new Date().getTime())]);
 
         let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
         WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [msg.author.id]);

@@ -34,7 +34,7 @@ var createEmbed = async (members, unorderedRows, partySize) => {
 module.exports = {
     name: "party",
     category: "Battle",
-    description: "Build a party to go on an #adventure or #conquest mission.", 
+    description: "Build a party to go on a #conquest mission.", 
     examples: ["#party: create a party of up to 4 players.",
     "#party 8: create a party of up to 8 players. This is the maximum size of any party."],
     min: 0, max: 1, cooldown: 5,

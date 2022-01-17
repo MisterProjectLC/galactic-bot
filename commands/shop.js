@@ -13,13 +13,13 @@ var showShop = async (weapons, armors, channel) => {
     let total_i = 1;
     let text = '';
     for (let i = 0; i < weapons.length; i++, total_i++) {
-        text += `**${total_i}. ${weapons[i].title}** \`${weapons[i].cost_per_level}🪙\` - **[Lvl ${weapons[i].min_level}]**\n`;
+        text += `**${total_i}. ${weapons[i].title}** ${weapons[i].cost_per_level}:coin: - **[Lvl ${weapons[i].min_level}]**\n`;
     }
     embed = embed.addField(`WEAPONS`, text, false);
 
     text = '';
     for (let i = 0; i < armors.length; i++, total_i++) {
-        text += `**${total_i}. ${armors[i].title}** \`${armors[i].cost_per_level}🪙\` - **[Lvl ${armors[i].min_level}]**\n`;
+        text += `**${total_i}. ${armors[i].title}** ${armors[i].cost_per_level}:coin: - **[Lvl ${armors[i].min_level}]**\n`;
     }
     embed = embed.addField(`ARMORS`, text, false);
 

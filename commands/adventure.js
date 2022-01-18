@@ -20,9 +20,10 @@ module.exports = {
         let m = await msg.reply("Loading...");
         await db.makeQuery(`SELECT * FROM adventures`).then((result) => {
             result.rows.forEach(row => {
-                let lower_arg = com_args.join(" ").toLowerCase();
-                let lower_title = row.title.toLowerCase();
-                let score = compareTwoStrings(lower_arg, lower_title);
+                let lowerArg = com_args.join(" ").toLowerCase();
+                let lowerTitle = row.title.toLowerCase();
+                let lowerFirst = row.title.toLowerCase().split(" ")[0];
+                let score = Math.max(compareTwoStrings(lowerArg, lowerTitle), compareTwoStrings(lowerArg, lowerFirst));
                 if (score > bestScore) {
                     bestMatch = row;
                     bestScore = score;

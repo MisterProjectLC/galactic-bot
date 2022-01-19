@@ -38,14 +38,14 @@ let buildArmorLine = (armor) => {
         capitalize(armor.effect_title) : "None"}`;
 };
 
-let buildListMessage = async (msg, channel, playerID, playerTitle, title, description, list, lineBuilder, min, max, selected = []) => {
+let buildListMessage = async (msg, user, playerTitle, title, description, list, lineBuilder, min, max, selected = []) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle(`**${playerTitle} - ${title}**`)
     .setDescription(`${description}`);
 
     if (msg === null) {
-        msg = await channel.send({embeds: [embed]});
+        msg = await user.send({embeds: [embed]});
         msg.react('◀️');
         for (let index = 0; index < emojiNumbers.length; index++)
             msg.react(emojiNumbers[index]);
@@ -53,10 +53,10 @@ let buildListMessage = async (msg, channel, playerID, playerTitle, title, descri
     }
     
     // Reactions
-    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(playerID));
+    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(user.id));
     try {
         for (const reaction of userReactions.values())
-            await reaction.users.remove(playerID);
+            await reaction.users.remove(user.id);
     } catch (error) {
         console.error('Failed to remove reactions.');
     }
@@ -102,7 +102,7 @@ let onListReaction = (reaction, user, info, playerTitle, objectName, lineBuilder
     }
      
     // Update embed
-    buildListMessage(info.msg, info.msg.channel, user.id, playerTitle, listTitle, listDescription,
+    buildListMessage(info.msg, user, playerTitle, listTitle, listDescription,
                     info.list, lineBuilder, info.page*emojiNumbers.length, info.page*emojiNumbers.length + emojiNumbers.length, info.selected);
     return info;
 };
@@ -127,6 +127,9 @@ module.exports = {
 
     generatePlayerInfos: async (playerIDs, msg) => {
         let players = [];
+
+        let members = (await msg.guild.members.fetch()).cache;
+
         await asyncForEach(playerIDs, async playerID => {
             let playerInfo = db.makeQuery(`SELECT * FROM ePlayers WHERE userid ilike $1`, [playerID]);
             let playerWeapons = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
@@ -137,14 +140,16 @@ module.exports = {
             playerInfo = (await playerInfo).rows[0];
             playerWeapons = (await playerWeapons).rows;
             playerArmors = (await playerArmors).rows;
+
+            let user = members.find(member.user.id == playerID);
     
-            let weaponMsg = await buildListMessage(null, msg.channel, playerID, playerInfo.title, "Weapon List", "Choose 2 weapons:",
+            let weaponMsg = await buildListMessage(null, user, playerInfo.title, "Weapon List", "Choose 2 weapons:",
             playerWeapons, buildWeaponLine, 0, emojiNumbers.length);
             
-            let armorMsg = await buildListMessage(null, msg.channel, playerID, playerInfo.title, "Armor List", "Choose 2 armors:",
+            let armorMsg = await buildListMessage(null, user, playerInfo.title, "Armor List", "Choose 2 armors:",
             playerArmors, buildArmorLine, 0, emojiNumbers.length);
     
-            players.push({info:playerInfo, confirmed: false,
+            players.push({info:playerInfo, user: user, confirmed: false,
                 weapons:{list: playerWeapons, selected: [], msg: weaponMsg, page: 0}, 
                 armors:{list: playerArmors, selected: [], msg: armorMsg, page: 0}
             });

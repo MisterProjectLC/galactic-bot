@@ -1,10 +1,78 @@
 const db = require('../external/database.js');
-const Discord = require('discord.js');
+const { codeBlock } = require('@discordjs/builders');
 const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
 const { delay } = require('../utils/delay.js');
 
-var showShop = async (weapons, armors, channel) => {
+var showShop = async (weapons, armors, channel)  => {
+    let weaponTuples = [];
+    let armorTuples = [];
+
+    let indexHeader = 'Nº ';
+    let titleHeader = 'TITLE';
+    let costHeader = 'COST';
+    let levelHeader = 'MIN. LEVEL';
+
+    let longestIndexLength = indexHeader.length;
+    let longestTitleLength = titleHeader.length;
+    let longestCostLength = costHeader.length;
+
+    // Setup Tuples
+    let i = 1;
+    for (let weapon of weapons) {
+        if (weapon.title.length > longestTitleLength)
+            longestTitleLength = weapon.title.length;
+        
+        weaponTuples.push([i, weapon.title, weapon.cost_per_level, weapon.min_level]);
+        i++;
+    }
+
+    for (let armor of armors) {
+        if (armor.title.length > longestTitleLength) {
+            longestTitleLength = armor.title.length;
+        }
+        armorTuples.push([i, armor.title, armor.cost_per_level, armor.min_level]);
+        i++;
+    }
+
+    // Setup lines
+    let setupLine = (index, titleStr, cost, min_level) => {
+        let indexStr = `${index}.`;
+        while (longestIndexLength > indexStr.length) {
+            indexStr += ' ';
+        }
+        
+        while (longestTitleLength > titleStr.length) {
+            titleStr += ' ';
+        }
+
+        let costStr = `${cost}$`;
+        while (longestCostLength > costStr.length) {
+            costStr += ' ';
+        }
+
+        rowStrings.push(`${indexStr} ${titleStr}  ${costStr}   Level ${min_level}`);
+    }
+
+    while (longestTitleLength > titleHeader.length) {
+        titleHeader += ' ';
+    }
+    let header = `${indexHeader} ${titleHeader}  ${costHeader}   ${levelHeader}`;
+
+    let rowStrings = [];
+    rowStrings.push("WEAPONS ---");
+    rowStrings.push(header);
+    weaponTuples.forEach(tuple => setupLine(...tuple));
+    rowStrings.push("ARMORS ----");
+    rowStrings.push(header);
+    armorTuples.forEach(tuple => setupLine(...tuple));
+
+    let message = `🪐 SHOP 🪐\n\n` + rowStrings.join("\n");
+    channel.send(codeBlock('js', message));
+}
+
+
+/*var showShop = async (weapons, armors, channel) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle("The Shop")
@@ -24,20 +92,22 @@ var showShop = async (weapons, armors, channel) => {
     embed = embed.addField(`ARMORS`, text, false);
 
     channel.send(embed);
-}
+}*/
 
 
 var checkShop = async (com_args, msg) => {
     let weapons = [];
     let armors = [];
-
+    
+    let m = await msg.reply("Loading...");
     let result = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title`);
     weapons = result.rows;
 
     result = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title`);
     armors = result.rows;
 
-    showShop(weapons, armors, msg.channel);
+    await showShop(weapons, armors, msg.channel);
+    m.delete().catch(err => console.log("Couldn't delete the message " + err));
 }
 
 var buyFromShop = async (com_args, msg) => {

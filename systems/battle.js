@@ -55,6 +55,8 @@ module.exports.Battle = class {
         let index = 0;
         for (index = 0; index < this.log.length; index += LINES_PER_LOG) {
             let text = this.log.slice(index, index+LINES_PER_LOG).reduce((previousValue, current) => {return previousValue + current + "\n"}, "");
+            if (index+LINES_PER_LOG >= this.log.length-1)
+                text += "⚔️\n";
             if (this.logMsgs.length > index/LINES_PER_LOG)
                 await this.logMsgs[index/LINES_PER_LOG].edit(text);
             else {
@@ -69,16 +71,22 @@ module.exports.Battle = class {
         let leftBattleStatus = [];
         
         await asyncForEach(this.leftFighters, async (fighter) => {
-            leftBattleStatus.push(await this.channel.send(this.updateBattleStatus(fighter, 'A')));
+            leftBattleStatus.push(this.updateBattleStatus(fighter, 'A'));
         });
 
         let rightBattleStatus = [];
         await asyncForEach(this.rightFighters, async (fighter) => {
-            rightBattleStatus.push(await this.channel.send(this.updateBattleStatus(fighter, 'B')));
+            rightBattleStatus.push(this.updateBattleStatus(fighter, 'B'));
         });
-
+        
+        let statusEmbedMsg = await this.channel.send({embeds: leftBattleStatus.concat(rightBattleStatus)});
 
         this.logMsgs.push(await this.channel.send(`**--BATTLE LOG--**`));
+        this.logMsgs.push(await this.channel.send(`**----**`));
+        this.logMsgs.push(await this.channel.send(`**----**`));
+        this.logMsgs.push(await this.channel.send(`**----**`));
+        this.logMsgs.push(await this.channel.send(`**----**`));
+        this.logMsgs.push(await this.channel.send(`**----**`));
 
         let endgame = 0;
         while (true) {
@@ -87,7 +95,7 @@ module.exports.Battle = class {
                 endgame == 1;
                 break;
             }
-            await this.round(leftBattleStatus, rightBattleStatus);
+            await this.round(leftBattleStatus, rightBattleStatus, statusEmbedMsg);
             await delay(TURN_DELAY*1000);
     
             endgame = 2;
@@ -107,6 +115,11 @@ module.exports.Battle = class {
                 break;
         }
 
+        this.logMsgs.forEach(msg => {
+            if (msg.content == `**----**`)
+                msg.delete().catch((err) => console.log('Could not delete the message', err));
+        });
+
         if (endgame != 0)
             await this.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
         else
@@ -114,7 +127,7 @@ module.exports.Battle = class {
         return endgame;
     }
     
-    async round(leftBattleStatus, rightBattleStatus) {
+    async round(leftBattleStatus, rightBattleStatus, statusEmbedMsg) {
         if (this.log[this.log.length-1].startsWith("**Round"))
             this.log.push(`Nothing happened...`);
         this.log.push(`**ROUND ${this.rounds}**`);
@@ -124,10 +137,12 @@ module.exports.Battle = class {
         await this.logUpdate();
         
         for (let i = 0; i < leftBattleStatus.length; i++)
-            await leftBattleStatus[i].edit(this.updateBattleStatus(this.leftFighters[i], 'A'));
+            leftBattleStatus[i] = this.updateBattleStatus(this.leftFighters[i], 'A');
 
         for (let i = 0; i < rightBattleStatus.length; i++)
-            await rightBattleStatus[i].edit(this.updateBattleStatus(this.rightFighters[i], 'B'));
+            rightBattleStatus[i] = this.updateBattleStatus(this.rightFighters[i], 'B');
+        
+        statusEmbedMsg.edit({embeds : leftBattleStatus.concat(rightBattleStatus)});
     }
     
     sideRound(actors, opponents, attackAll) {

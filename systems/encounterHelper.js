@@ -45,12 +45,11 @@ let buildListMessage = async (msg, channel, playerID, playerTitle, title, descri
     .setDescription(`${description}`);
 
     if (msg === null) {
-        msg = await channel.send(embed);
+        msg = await channel.send({embeds: [embed]});
         msg.react('◀️');
-        msg.react('▶️');
-
         for (let index = 0; index < emojiNumbers.length; index++)
             msg.react(emojiNumbers[index]);
+        msg.react('▶️');
     }
     
     // Reactions
@@ -69,7 +68,7 @@ let buildListMessage = async (msg, channel, playerID, playerTitle, title, descri
     }
 
     // Add message
-    msg.edit(embed);
+    msg.edit({embeds: [embed]});
     return msg;
 };
 

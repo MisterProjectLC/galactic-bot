@@ -1,6 +1,10 @@
 const db = require('../external/database.js');
 const {delay} = require('../utils/delay');
 const constants = require('../data/constants');
+const rewards = require('../systems/rewards');
+const {asyncForEach} = require('../utils/asyncForEach');
+
+var Client;
 
 var refresh = (name, callback) => {
     console.log("Try Refresh " + name);
@@ -77,11 +81,61 @@ var rotatingShop = async () => {
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
 }
 
-var initializePeriodic = async () => {
+
+var spaceClubUpdate = async () => {
+    console.log("spaceClubUpdate");
+    let memberList = [];
+
+    await Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
+        guild.fetch().then(guild => {
+            if (!guild.available)
+                return;
+            guild.members.fetch().then(members => members.forEach(member => {
+            if (!memberList.includes(member))
+                memberList.push(member);
+            }))
+        })
+    })).catch(console.error);
+
+    console.log(memberList);
+
+    let newClubList = [];
+    let kickList = [];
+
+    let nonMembers = (await db.makeQuery('SELECT userid FROM players WHERE spaceClub = false')).rows;
+    console.log('nonMembers');
+    console.log(nonMembers);
+
+    await asyncForEach(memberList, async member => {
+        if (member.roles.cache.some(role => role.name == "SpaceClub") && nonMembers.some(row => row.userid == member.user.id)
+                && !newClubList.includes(member.user.id)) {
+            newClubList.push(member.user.id);
+            await rewards.giveLevels(member.user.id, 20);
+        
+        } else if (!member.roles.cache.some(role => role.name == "SpaceClub") && !nonMembers.some(row => row.userid == member.user.id)
+                && !kickList.includes(member.user.id))
+            kickList.push(member.user.id);
+    });
+
+    console.log('newClubList');
+    console.log(newClubList);
+    console.log('kickList');
+    console.log(kickList);
+
+    db.makeQuery('UPDATE players SET spaceClub = true WHERE spaceClub = false AND userid = ANY($1)', [newClubList]);
+    db.makeQuery('UPDATE players SET spaceClub = false, level = GREATEST(1, level - 20) WHERE spaceClub = true AND userid = ANY($1)', [kickList]);
+
+    setTimeout(spaceClubUpdate, 60 * 60 * 1000);
+}
+
+
+var initializePeriodic = async (client) => {
+    Client = client;
     await delay(10*1000);
     setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
     setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
+    setTimeout(spaceClubUpdate, 1000);
 }
 
 module.exports.initializePeriodic = initializePeriodic;

@@ -53,7 +53,7 @@ module.exports = {
         .setFooter("Press 🎁 to open");
 
         // Create summary message
-        let m = await msg.channel.send(embed);
+        let m = await msg.channel.send({embeds: [embed]});
         m.react('🎁');
 
         saved_messages.add_message('packOpen', m.id, {giftedID: giftedID, coins: coins, gifted:gifted});

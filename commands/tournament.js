@@ -2,6 +2,7 @@ const db = require('../external/database.js');
 const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
+const encounter = require('../systems/duelEncounter');
 const {removeReactions} = require('../utils/removeReactions');
 const {deleteMessage} = require('../utils/deleteMessage');
 const {shuffleArray} = require('../utils/shuffleArray');
@@ -16,7 +17,7 @@ var resolveDuel = (endgame, pkg) => {
 }
 
 
-var confirmTournament = (pkg) => {    
+var confirmTournament = async (pkg) => {    
     let participants = shuffleArray(pkg.participants);
 
     let titles = [];
@@ -34,7 +35,12 @@ var confirmTournament = (pkg) => {
         duels.push(duel);
     }
 
-    pkg.msg.channel.send(createBoard(duels));
+    let boardMsg = pkg.msg.channel.send(createBoard(duels));
+
+    //while (true) {
+        //for (duel )
+        await encounter.generateDuelEncounter(pkg.msg, module.exports, [pkg.challengerID], [pkg.challengedID], pkg.bet, payBet);
+    //}
 };
 
 
@@ -110,7 +116,7 @@ module.exports = {
         let participants = [msg.author.id];
         let embed = await createEmbed(participants, result.rows, tournamentSize);
 
-        let m = await msg.reply(embed);
+        let m = await msg.reply({embeds: [embed]});
         m.react('🔼');
 
         // Create tournament message
@@ -161,7 +167,7 @@ module.exports = {
             return;
 
         // Update
-        msg.edit(await createEmbed(pkg.participants, result.rows, pkg.tournamentSize));
+        msg.edit({embeds: [await createEmbed(pkg.participants, result.rows, pkg.tournamentSize)]});
         if (pkg.membrs.length == pkg.tournamentSize)
             msg.react('✅');
         else

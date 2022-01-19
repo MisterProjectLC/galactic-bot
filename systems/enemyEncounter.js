@@ -53,7 +53,7 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
     enemyInfos.splice(r, 1);
 
     // Create summary message
-    let mainMsg = await msg.channel.send(generateEnemyEmbed(title, maxEnemies, enemyInfos, enemyInfosInGame));
+    let mainMsg = await msg.channel.send({embeds: [generateEnemyEmbed(title, maxEnemies, enemyInfos, enemyInfosInGame)]});
     mainMsg.react('✅');
     mainMsg.react('❌');
     if (maxEnemies > 1 && enemyInfos.length >= 1)
@@ -87,7 +87,7 @@ var updateEncounter = async (reaction, user, pkg, added, command) => {
             let r = randomInt(pkg.enemiesInReserve.length);
             pkg.enemies.push(pkg.enemiesInReserve[r]);
             pkg.enemiesInReserve.splice(r, 1);
-            await pkg.msg.edit(generateEnemyEmbed(pkg.title, pkg.maxEnemies, pkg.enemiesInReserve, pkg.enemies));
+            await pkg.msg.edit({embeds: [generateEnemyEmbed(pkg.title, pkg.maxEnemies, pkg.enemiesInReserve, pkg.enemies)]});
             saved_messages.add_message(command.name+'Main', msg.id, pkg);
 
             if (!(pkg.maxEnemies > pkg.enemies.length && pkg.enemiesInReserve.length >= 1))

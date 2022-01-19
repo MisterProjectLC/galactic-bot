@@ -37,7 +37,7 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     .setFooter("Combatants: Press ✅ when ready");
 
     // Create summary message
-    let mainMsg = await msg.channel.send(embed);
+    let mainMsg = await msg.channel.send({embeds: [embed]});
     mainMsg.react('✅');
 
     // Register messages

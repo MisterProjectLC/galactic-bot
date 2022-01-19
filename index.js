@@ -5,18 +5,17 @@ const config = require('./data/config');
 
 const Client = new Discord.Client({
     intents: [
-        Discord.Intents.GUILDS,
-        Discord.Intents.GUILD_MEMBERS,
-        Discord.Intents.GUILD_BANS,
-        Discord.Intents.GUILD_INTEGRATIONS,
-        Discord.Intents.GUILD_INVITES,
-        Discord.Intents.GUILD_EMOJIS_AND_STICKERS,
-        Discord.Intents.GUILD_VOICE_STATES,
-        Discord.Intents.GUILD_PRESENCES,
-        Discord.Intents.GUILD_MESSAGES,
-        Discord.Intents.GUILD_MESSAGE_REACTIONS,
-        Discord.Intents.DIRECT_MESSAGES,
-        Discord.Intents.DIRECT_MESSAGE_REACTIONS
+        Discord.Intents.FLAGS.GUILDS,
+        Discord.Intents.FLAGS.GUILD_MEMBERS,
+        Discord.Intents.FLAGS.GUILD_BANS,
+        Discord.Intents.FLAGS.GUILD_INTEGRATIONS,
+        Discord.Intents.FLAGS.GUILD_INVITES,
+        Discord.Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
+        Discord.Intents.FLAGS.GUILD_PRESENCES,
+        Discord.Intents.FLAGS.GUILD_MESSAGES,
+        Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+        Discord.Intents.FLAGS.DIRECT_MESSAGES,
+        Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
     ],
     partials: [
         'CHANNEL',
@@ -31,6 +30,7 @@ const checkArgs = require('./utils/checkArgs.js').checkArgs;
 const checkCooldown = require('./utils/cooldownControl').checkCooldown;
 const errors = require('./data/errors.js');
 const {initializePeriodic} = require('./systems/periodicFunctions');
+const { delay } = require('./utils/delay');
 
 // Comandos
 const prefixes = config.prefixes;
@@ -56,7 +56,7 @@ Client.on("ready", () => {
 
 
 // Mensagens
-Client.on("message", msg => {
+Client.on("messageCreate", async msg => {
 	if (msg.author === Client.user)
 		return;
     
@@ -97,7 +97,9 @@ Client.on("message", msg => {
     if (found)
         return;
 
-    msg.reply(errors.unidentifiedCommand);
+    let m = await msg.reply(errors.unidentifiedCommand);
+    await delay(1000*5);
+    m.delete().catch(err => console.log(err));
 });
 
 
@@ -124,4 +126,4 @@ Client.on("messageReactionRemove", (reaction, user) => {
 })
 
 Client.login(token);
-initializePeriodic();
+initializePeriodic(Client);

@@ -58,7 +58,7 @@ module.exports = {
         let members = [msg.author.id];
         let embed = await createEmbed(members, result.rows, partySize);
 
-        let m = await msg.reply(embed);
+        let m = await msg.reply({embeds: [embed]});
         m.react('🔼');
         for (let i = 0; i < Math.min(emojiNumbers.length, partySize); i++)
             m.react(emojiNumbers[i]);
@@ -119,7 +119,7 @@ module.exports = {
             return;
 
         // Update
-        msg.edit(await createEmbed(pkg.members, result.rows, pkg.partySize));
+        msg.edit({embeds: [await createEmbed(pkg.members, result.rows, pkg.partySize)] });
         saved_messages.add_message('party', msg.id, {callerID: pkg.callerID, members: pkg.members, partySize: pkg.partySize, msg: msg});
     },
     permission: (msg) => true,

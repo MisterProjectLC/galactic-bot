@@ -24,7 +24,7 @@ var buildListMessage = async (msg, channel, requester_id, title, description, li
     .setDescription(`${description}`);
 
     if (msg === null) {
-        msg = await channel.send(embed);
+        msg = await channel.send({ embeds: [embed] });
         msg.react('◀️');
         msg.react('▶️');
     }
@@ -37,7 +37,7 @@ var buildListMessage = async (msg, channel, requester_id, title, description, li
     }
 
     // Add message
-    msg.edit(embed);
+    msg.edit({ embeds: [embed] });
     return msg;
 }
 
@@ -77,14 +77,14 @@ module.exports = {
         .setColor(0x1d51cc)
         .setTitle(player.title)
         .setThumbnail(msg.author.avatarURL())
-        .addField('Level', player.level, true)
+        .addField('Level', `${player.level}`, true)
         .addField('XP', `${player.xp}/${xpThreshold(player.level)}`, true)
-        .addField('Coins', player.coins, true);
+        .addField('Coins', `${player.coins}`, true);
 
-        msg.reply(embed);
+        msg.reply({ embeds: [embed] });
 
         // REMOVE THIS ---------------------------------------------------
-        db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [msg.author.id, (new Date().getTime())]);
+        //db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [msg.author.id, (new Date().getTime())]);
 
         let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
         WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [msg.author.id]);

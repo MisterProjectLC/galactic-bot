@@ -1,7 +1,7 @@
 const timeFormatter = require('../utils/timeFormatter').timeFormatter;
 const Discord = require('discord.js');
 
-help_formatting = (command) => {
+helpFormatting = (command) => {
     let embedResponse = new Discord.MessageEmbed()
 	.setColor(0x1d51cc)
 	.setAuthor("Bot")
@@ -27,7 +27,7 @@ help_formatting = (command) => {
 	return embedResponse;
 };
 
-complete_list = (command_list) => {
+completeList = (command_list) => {
     let lists = {};
     for (let category in command_list) {
         let list = "";
@@ -80,9 +80,9 @@ module.exports = {
         });
 
         if (requested_command === null)
-            msg.reply(complete_list(commandList));
+            msg.reply({embeds: [completeList(commandList)] });
         else
-            msg.reply(help_formatting(requested_command));
+            msg.reply({embeds: [helpFormatting(requested_command)] });
     }, 
     permission: (msg) => true
 };

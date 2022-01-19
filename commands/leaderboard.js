@@ -11,7 +11,7 @@ generatePage = async (rows, pageNumber, totalPages, userRank=null)  => {
     let tuples = [];
 
     let rankHeader = ' 🎖️';
-    let usernameHeader = 'SPACE TRAVELER';
+    let usernameHeader = 'PLAYER';
 
     let longestUsernameLength = usernameHeader.length;
 
@@ -42,7 +42,7 @@ generatePage = async (rows, pageNumber, totalPages, userRank=null)  => {
             rankStr = ' ' + rankStr;
         }
 
-        rowStrings.push(`${rankStr}.  ${userStr} • ${level}//${xp}`);
+        rowStrings.push(`${rankStr}.  ${userStr}   • ${level}//${xp}`);
     }
 
     while (longestRankLength > rankHeader.length - 1) {
@@ -65,8 +65,8 @@ generatePage = async (rows, pageNumber, totalPages, userRank=null)  => {
 
 // Exports
 module.exports = {
-    name: "leaderboards",
-    nicknames: ["ranking", "rankings", "rank"],
+    name: "leaderboard",
+    nicknames: ["ranking", "rankings", "rank", "leaderboards"],
     category: "General",
     description: "Check the leaderboards.", 
     min: 0, max: 0, cooldown: 10,

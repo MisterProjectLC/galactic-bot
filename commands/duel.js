@@ -94,7 +94,7 @@ module.exports = {
         .setFooter("Press ✅ to accept\nPress ❌ to deny");
 
         // Create summary message
-        let m = await msg.channel.send(embed);
+        let m = await msg.channel.send({embeds: [embed]});
         m.react('✅');
         m.react('❌');
 

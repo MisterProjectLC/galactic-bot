@@ -79,7 +79,7 @@ module.exports = {
                 Resistance to Effect: ${armors[i].effect_title !== null ? capitalize(armors[i].effect_title) : "None"}`, true);
         }
 
-        msg.reply(embed);
+        msg.reply({embeds: [embed]});
     },
     permission: (msg) => true
 };

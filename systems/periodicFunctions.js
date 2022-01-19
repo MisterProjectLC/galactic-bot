@@ -123,7 +123,9 @@ var spaceClubUpdate = async () => {
     console.log(kickList);
 
     db.makeQuery('UPDATE players SET spaceClub = true WHERE spaceClub = false AND userid = ANY($1)', [newClubList]);
-    db.makeQuery('UPDATE players SET spaceClub = false, level = GREATEST(1, level - 20) WHERE spaceClub = true AND userid = ANY($1)', [kickList]);
+    await db.makeQuery('UPDATE players SET spaceClub = false, level = GREATEST(1, level - 20) WHERE spaceClub = true AND userid = ANY($1)', [kickList]);
+    db.makeQuery(`UPDATE entities SET health = 20 + 4*(SELECT level FROM players WHERE players.entity = entities.id) 
+    WHERE id = ANY(SELECT entity FROM players);`);
 
     setTimeout(spaceClubUpdate, 60 * 60 * 1000);
 }

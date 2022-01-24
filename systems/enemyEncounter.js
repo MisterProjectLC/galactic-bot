@@ -28,9 +28,9 @@ var generateEnemyEmbed = (title, maxEnemies,  enemyInfos, enemyInfosInGame) => {
     .setDescription("If the battle reaches the 9th round, the enemies win automatically.");
 
     if (maxEnemies > enemyInfosInGame.length && enemyInfos.length >= 1)
-        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)\nHost: Press 🆙 to add an enemy");
+        embed = embed.setFooter("Choose your weapons/armors in my private messages\nCombatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)\nHost: Press 🆙 to add an enemy");
     else
-        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)");
+        embed = embed.setFooter("Choose your weapons/armors in my private messages\nCombatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)");
 
     // Enemies
     enemyInfosInGame.forEach(enemy => {
@@ -54,10 +54,10 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
 
     // Create summary message
     let mainMsg = await msg.channel.send({embeds: [generateEnemyEmbed(title, maxEnemies, enemyInfos, enemyInfosInGame)]});
-    mainMsg.react('✅');
-    mainMsg.react('❌');
+    mainMsg.react('✅').catch(err => console.log(err));
+    mainMsg.react('❌').catch(err => console.log(err));
     if (maxEnemies > 1 && enemyInfos.length >= 1)
-        mainMsg.react('🆙');
+        mainMsg.react('🆙').catch(err => console.log(err));
 
     // Register messages
     players.forEach(player => {
@@ -157,11 +157,31 @@ var updateEncounter = async (reaction, user, pkg, added, command) => {
 
 var onReaction = async (reaction, user, added, command) => {
     let msg = reaction.message;
-    let confirmID = msg.id;
 
     if (added == false)
         return;
 
+    // Main package - a single encounter
+    let pkg = saved_messages.get_message(command.name + 'Main', msg.id);
+    if (pkg) {
+        let playerIdx = pkg.players.findIndex(player => {return player.info.userid == user.id});
+        if (playerIdx == -1)
+            return;
+        
+        // Confirm reaction
+        if (pkg.msg.id == msg.id) {
+            updateEncounter(reaction, user, pkg, added, command);
+            return;
+        }
+    }
+}
+
+
+
+var onInteraction = (interaction, command) => {
+    let msg = interaction.message;
+    let user = interaction.user;
+    let confirmID = msg.id;
 
     // Secondary index to main package (player -> package)
     let index = saved_messages.get_message(command.name + 'Player', msg.id);
@@ -176,15 +196,9 @@ var onReaction = async (reaction, user, added, command) => {
             return;
 
         // Weapon + Armor reaction
-        let updatedPkg = updateInventory(reaction, user, pkg.players[playerIdx]);
+        let updatedPkg = updateInventory(interaction, pkg.players[playerIdx]);
         if (updatedPkg) {
             pkg.players[playerIdx] = updatedPkg;
-            return;
-        }
-        
-        // Confirm reaction
-        if (pkg.msg.id == msg.id) {
-            updateEncounter(reaction, user, pkg, added, command);
             return;
         }
     }
@@ -193,5 +207,6 @@ var onReaction = async (reaction, user, added, command) => {
 
 module.exports = {
     generateEnemyEncounter: generateEnemyEncounter,
-    onReaction: onReaction
+    onReaction: onReaction,
+    onInteraction: onInteraction
 }

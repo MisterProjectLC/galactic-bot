@@ -75,8 +75,7 @@ module.exports = {
                 Shields: ${armors[i].shield}
                 Plate: ${armors[i].plate}
                 Regen: ${armors[i].regen}
-                Evasion: ${armors[i].evasion}
-                Resistance to Effect: ${armors[i].effect_title !== null ? capitalize(armors[i].effect_title) : "None"}`, true);
+                Evasion: ${armors[i].evasion}`, true);
         }
 
         msg.reply({embeds: [embed]});

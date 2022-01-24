@@ -32,11 +32,11 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     .setColor(0x1d51cc)
     .setTitle("Duel - " + leftPlayers[0].info.title + " VS " + rightPlayers[0].info.title)
     .setDescription("The challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
-    .setFooter("Combatants: Press ✅ when ready");
+    .setFooter("Choose your weapons/armors in my private messages\nCombatants: Press ✅ when ready");
 
     // Create summary message
     let mainMsg = await msg.channel.send({embeds: [embed]});
-    mainMsg.react('✅');
+    mainMsg.react('✅').catch(err => console.log(err));
 
     // Register messages
     registerPlayer = (player) => {
@@ -98,10 +98,32 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
 
 var onReaction = async (reaction, user, added) => {
     let msg = reaction.message;
-    let confirmID = msg.id;
 
     if (!added)
         return;
+
+    // Main package - a single encounter
+    let pkg = saved_messages.get_message('duelMain', msg.id);
+    if (pkg) {
+        let leftPlayerIdx = pkg.leftPlayers.findIndex(player => { return player.info.userid == user.id});
+        let rightPlayerIdx = pkg.rightPlayers.findIndex(player => { return player.info.userid == user.id});
+
+        if (leftPlayerIdx == -1 && rightPlayerIdx == -1)
+            return;
+
+        // Confirm reaction
+        if (pkg.msg.id == msg.id) {
+            confirmDuelEncounter(reaction, user, pkg, added);
+            return;
+        }
+    }
+}
+
+
+var onInteraction = (interaction, command) => {
+    let msg = interaction.message;
+    let user = interaction.user;
+    let confirmID = msg.id;
 
     // Secondary index to main package (player -> package)
     let index = saved_messages.get_message('duelPlayer', msg.id);
@@ -117,16 +139,10 @@ var onReaction = async (reaction, user, added) => {
         if (leftPlayerIdx == -1 && rightPlayerIdx == -1)
             return;
 
-        // Confirm reaction
-        if (pkg.msg.id == msg.id) {
-            confirmDuelEncounter(reaction, user, pkg, added);
-            return;
-        }
-
         // Weapon + Armor reaction
         let updatedPkg;
         if (leftPlayerIdx !== -1) {
-            updatedPkg = updateInventory(reaction, user, pkg.leftPlayers[leftPlayerIdx]);
+            updatedPkg = updateInventory(interaction, pkg.leftPlayers[leftPlayerIdx]);
             if (updatedPkg !== null)
                 pkg.leftPlayers[leftPlayerIdx] = updatedPkg;
             return;
@@ -144,5 +160,6 @@ var onReaction = async (reaction, user, added) => {
 
 module.exports = {
     generateDuelEncounter: generateDuelEncounter,
-    onReaction: onReaction
+    onReaction: onReaction,
+    onInteraction: onInteraction
 }

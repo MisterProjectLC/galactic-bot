@@ -123,7 +123,19 @@ Client.on("messageReactionRemove", (reaction, user) => {
         if (command.reaction)
             command.reaction(reaction, user, false);
     });
-})
+});
+
+
+Client.on('interactionCreate', interaction => {
+	if (!interaction.isButton() || interaction.user === Client.user) 
+        return;
+
+	const { commands } = Client;
+    commands.forEach(async (command) => {
+        if (command.interaction)
+            command.interaction(interaction);
+    });
+});
 
 Client.login(token);
 initializePeriodic(Client);

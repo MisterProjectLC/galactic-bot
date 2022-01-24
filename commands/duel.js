@@ -116,5 +116,10 @@ module.exports = {
 
         encounter.onReaction(reaction, user, added);
     },
+
+    interaction: async (interact) => {
+        encounter.onInteraction(interact);
+    },
+
     permission: (msg) => true
 };

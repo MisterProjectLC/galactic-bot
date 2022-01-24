@@ -72,5 +72,9 @@ module.exports = {
         encounter.onReaction(reaction, user, added, module.exports);
     },
 
+    interaction: (interaction) => {
+        encounter.onInteraction(interaction, module.exports);
+    },
+
     permission: (msg) => true
 };

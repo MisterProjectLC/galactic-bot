@@ -46,20 +46,30 @@ let buildListMessage = async (msg, user, playerTitle, title, description, list, 
 
     if (msg === null) {
         msg = await user.send({embeds: [embed]});
-        msg.react('◀️');
-        for (let index = 0; index < emojiNumbers.length; index++)
-            msg.react(emojiNumbers[index]);
-        msg.react('▶️');
     }
-    
-    // Reactions
-    const userReactions = msg.reactions.cache.filter(reaction => reaction.users.cache.has(user.id));
-    try {
-        for (const reaction of userReactions.values())
-            await reaction.users.remove(user.id);
-    } catch (error) {
-        console.error('Failed to remove reactions.');
-    }
+
+    let row = new Discord.MessageActionRow()
+    .addComponents(
+        new Discord.MessageButton()
+        .setCustomId('left')
+        .setLabel('◀️')
+        .setStyle('PRIMARY'),
+    );
+
+    for (let index = 0; index < emojiNumbers.length; index++)
+        row.addComponents(
+            new Discord.MessageButton()
+            .setCustomId(index.toString())
+            .setLabel(emojiNumbers[index])
+            .setStyle('PRIMARY'),
+        );
+
+    row.addComponents(
+        new Discord.MessageButton()
+        .setCustomId('right')
+        .setLabel('▶️')
+        .setStyle('PRIMARY'),
+    );
 
     for (let index = Math.max(min, 0); index < Math.min(max, list.length); index++) {
         let selected_text = selected.includes(index) ? 'SELECTED' : '';
@@ -68,26 +78,26 @@ let buildListMessage = async (msg, user, playerTitle, title, description, list, 
     }
 
     // Add message
-    msg.edit({embeds: [embed]});
+    msg.edit({embeds: [embed], components: [row]});
     return msg;
 };
 
 
-let onListReaction = (reaction, user, info, playerTitle, objectName, lineBuilder) => {
+let onListReaction = (interaction, info, playerTitle, objectName, lineBuilder) => {
     let listTitle = `${capitalize(objectName)} List`;
     let listDescription = `Choose 2 ${objectName}s:`;
 
     // Turn pages
-    let emoji = reaction.emoji.toString();
-    if (emoji === "◀️" && info.page > 0)
+    let customId = interaction.customId;
+    if (customId === "left" && info.page > 0)
         info.page -= 1;
 
-    else if (emoji === "▶️" && info.page < Math.floor((info.list.length - 1)/emojiNumbers.length))
+    else if (customId === "right" && info.page < Math.floor((info.list.length - 1)/emojiNumbers.length))
         info.page += 1;
 
     // Toggle weapon
-    else if (emojiNumbers.includes(emoji)) {
-        let objectNumber = info.page*emojiNumbers.length + emojiNumbers.lastIndexOf(emoji);
+    else {
+        let objectNumber = info.page*emojiNumbers.length + parseInt(customId);
         if (info.list.length <= objectNumber)
             return info;
 
@@ -102,7 +112,8 @@ let onListReaction = (reaction, user, info, playerTitle, objectName, lineBuilder
     }
      
     // Update embed
-    buildListMessage(info.msg, user, playerTitle, listTitle, listDescription,
+    interaction.deferUpdate().catch(console.error);
+    buildListMessage(info.msg, interaction.user, playerTitle, listTitle, listDescription,
                     info.list, lineBuilder, info.page*emojiNumbers.length, info.page*emojiNumbers.length + emojiNumbers.length, info.selected);
     return info;
 };
@@ -173,14 +184,14 @@ module.exports = {
         return await new battle.Battle(msg.channel, combatantsA, combatantsB, leftArePlayers, rightArePlayers).battle();
     },
 
-    updateInventory: (reaction, user, playerRef) => {
-        let msg = reaction.message;
+    updateInventory: (interaction, playerRef) => {
+        let msg = interaction.message;
 
         // Weapon + Armor reaction
         if (playerRef.weapons.msg.id == msg.id)
-            playerRef.weapons = onListReaction(reaction, user, playerRef.weapons, playerRef.info.title, 'weapon', buildWeaponLine);
+            playerRef.weapons = onListReaction(interaction, playerRef.weapons, playerRef.info.title, 'weapon', buildWeaponLine);
         else if (playerRef.armors.msg.id == msg.id)
-            playerRef.armors = onListReaction(reaction, user, playerRef.armors, playerRef.info.title, 'armor', buildArmorLine);
+            playerRef.armors = onListReaction(interaction, playerRef.armors, playerRef.info.title, 'armor', buildArmorLine);
         else
             return null;
     

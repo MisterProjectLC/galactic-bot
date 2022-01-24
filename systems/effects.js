@@ -4,14 +4,14 @@ const effectList = {
         let halfDamage = Math.round(Math.max(1, (damage  - defender.plate)/2));
         let leftoverDamage = Math.max(0, halfDamage - defender.shield);
         let shieldDamage = halfDamage - leftoverDamage;
-        defender.shield = defender.shield - shieldDamage;
+        defender.shield -= shieldDamage;
 
         let healthDamage = leftoverDamage + Math.round(Math.max(1, damage/2));
         defender.health = Math.max(0, defender.health - healthDamage);
 
-        let shieldMessage = `**${attacker.title}** dealt **${shieldDamage} damage** to **${defender.title}**'s Shields using **${weaponTitle}**!`;
+        let shieldMessage = `**${attacker.title}** dealt **${shieldDamage} damage** to **${defender.title}**'s Shields and **${attacker.title}** dealt **${healthDamage} Fire damage** to **${defender.title}**'s Health using **${weaponTitle}**!`;
         let healthMessage = `**${attacker.title}** dealt **${healthDamage} Fire damage** to **${defender.title}**'s Health using **${weaponTitle}**!`;
-        return (shieldDamage > 0) ? shieldMessage + '\n' + healthMessage : healthMessage;
+        return (shieldDamage > 0) ? shieldMessage : healthMessage;
     },
 
     acid: (damage, attacker, defender) => {
@@ -45,19 +45,26 @@ const effectList = {
         return null;
     },
 
-    void: (damage, attacker, defender) => {
-        let necroDamage = Math.max(1, damage - defender.plate);
-        necroDamage = Math.max(0, necroDamage - defender.shield);
+    void: (damage, attacker, defender, weaponTitle) => {
+        let effectiveDamage = Math.max(1, damage - defender.plate);
+        let necroDamage = Math.max(0, effectiveDamage - defender.shield);
+        defender.shield = Math.max(0, defender.shield - effectiveDamage);
+        defender.health = Math.max(0, defender.health - necroDamage);
         let log = necroDamage > 0;
+
         defender.necroHealth = Math.min(defender.maxHealth, defender.necroHealth + necroDamage);
-        return  log ? `**${attacker.title}** necroed **${necroDamage} Health** ** from **${defender.title}**!` : null;
+        console.log("NecroHealth " + defender.necroHealth);
+
+        let shieldMessage = `**${attacker.title}** dealt **${effectiveDamage} damage** to **${defender.title}** using **${weaponTitle}**!`;
+        let healthMessage = `**${attacker.title}** voided **${necroDamage} Health** from **${defender.title}**!`;
+        return  shieldMessage + (log ? '\n' + healthMessage : '');
     },
 
     bio: (damage, attacker, defender) => {
         let chemicalHeal = Math.max(0, (damage - defender.plate)/2);
-        let log = chemicalHeal > 0 && attacker.health < attacker.necroHealth;
+        let log = chemicalHeal > 0 && attacker.health < attacker.maxHealth - attacker.necroHealth;
         attacker.heal(chemicalHeal);
-        return  log ? `**${attacker.title}** healed **${chemicalHeal} Health** to themselves using **Chemicals**!` : "";
+        return  log ? `**${attacker.title}** healed **${chemicalHeal} Health** using **Bio**!` : null;
     }
 }
 
@@ -74,6 +81,6 @@ module.exports = {
     effect_list: effectList,
 
     get_effect: (title, level) => {
-        return effectList.hasOwnProperty(title) ? new module.exports.Effect(title, level, effectList[title], title === 'fire') : null;
+        return effectList.hasOwnProperty(title) ? new module.exports.Effect(title, level, effectList[title], title === 'fire' || title === 'void') : null;
     }
 }

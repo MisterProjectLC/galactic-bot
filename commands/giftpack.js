@@ -34,6 +34,7 @@ module.exports = {
         let giftedID = getUserIDFromMention(com_args[0]);
         if (giftedID === null) {
             msg.reply("Couldn't find the mentioned player...");
+            msg.reply(errors.helpFormatting(module.exports));
             return;
         }
 

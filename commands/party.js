@@ -19,7 +19,7 @@ var createEmbed = async (members, unorderedRows, partySize) => {
     let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
         .setTitle(`${titles[0]}'s Party`)
-        .setFooter("Press 🔼 to join the party.\nHost: Press 2️⃣-8️⃣ to kick members out");
+        .setFooter("Press ✅ to join the party.\nHost: Press 2️⃣-8️⃣ to kick members out\nHost: Press ❌ to end the party");
 
         let memberList = '';
         for (let i = 0; i < partySize; i++)
@@ -44,7 +44,7 @@ module.exports = {
         if (com_args > 0) {
             partySize = parseInt(com_args[0]);
             if (partySize !== partySize || partySize < 2 || partySize > 8) {
-                msg.reply(errors.invalidArgs);
+                msg.reply(errors.helpFormatting(module.exports));
                 return;
             }
         }
@@ -59,7 +59,8 @@ module.exports = {
         let embed = await createEmbed(members, result.rows, partySize);
 
         let m = await msg.reply({embeds: [embed]});
-        m.react('🔼');
+        m.react('✅');
+        m.react('❌');
         for (let i = 0; i < Math.min(emojiNumbers.length, partySize); i++)
             m.react(emojiNumbers[i]);
 
@@ -79,7 +80,7 @@ module.exports = {
         if (!pkg)
             return;
 
-        if (emoji === '🔼') {
+        if (emoji === '✅') {
             // The host is automatically invited
             await removeReactions(msg, pkg.callerID);
             if (pkg.callerID === user.id)
@@ -95,6 +96,14 @@ module.exports = {
                 pkg.members.splice(pkg.members.indexOf(user.id), 1);
             else
                 return;
+        }
+
+        else if (emoji === '❌') {
+            if (parties[user.id]) {
+                parties[user.id].delete().catch((err) => console.log('Could not delete the message', err));
+                saved_messages.remove_message('party', msg.id);
+            }
+            return;
         }
         
         else if (emojiNumbers.includes(emoji)) {

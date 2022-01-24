@@ -42,7 +42,7 @@ module.exports = {
         await Promise.all([weapon_promise, armor_promise]);
 
         if (i < 0 || i >= weapons.length + armors.length) {
-            msg.reply(errors.invalidArgs);
+            msg.reply(errors.helpFormatting(module.exports));
             return;
         }
 

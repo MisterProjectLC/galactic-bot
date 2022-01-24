@@ -155,3 +155,10 @@ CREATE TABLE timers (
 	title text PRIMARY KEY,
 	time timestamp
 );
+
+
+CREATE TABLE shopMessage (
+	guild_id text PRIMARY KEY,
+	channel_id text,
+	message_id text
+)

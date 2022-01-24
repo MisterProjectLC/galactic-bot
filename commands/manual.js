@@ -24,7 +24,7 @@ module.exports = {
         .addField("Regen", "Heals the player's health (not shields) every turn.", true)
         .addField("Evasion", "Chance of avoiding an attack completely. Evasion accumulates every turn, but is divided in half every time the player evades an attack.", true)
         .addField("Effects", "Some weapons have additional elemental effects with special properties: ", false)
-        .addField("Fire", "Half of this attack's damage ignores Shields.", true)
+        .addField("Fire", "Half of this attack's damage ignores Shields and Plate.", true)
         .addField("Plasma", "Deals double damage against Shields.", true)
         .addField("Acid", "The defender's Plate is reduced by 1/8 of this attack's damage.", true)
         .addField("Freeze", "The defender's Evasion is reduced by 1/4 of this attack's damage.", true)

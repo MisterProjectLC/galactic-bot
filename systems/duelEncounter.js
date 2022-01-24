@@ -1,11 +1,9 @@
 const db = require('../external/database.js');
 const saved_messages = require('../utils/saved_messages');
 const Discord = require('discord.js');
-const rewards = require('../systems/rewards');
 const { delay } = require('../utils/delay.js');
 const {generatePlayers, generatePlayerInfos, generateBattle, updateInventory} = require('./encounterHelper');
 const {deleteMessage} = require('../utils/deleteMessage');
-const {asyncForEach} = require('../utils/asyncForEach');
 
 var cleanup = (pkg) => {
     // Cleanup
@@ -24,7 +22,7 @@ var cleanup = (pkg) => {
 }
 
 
-var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, bet, giveReward) => {
+var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, outsidePkg, outsideFunction) => {
     // Players + Create weapons/armor messages
     let leftPlayers = await generatePlayerInfos(leftPlayerIDs, msg);
     let rightPlayers = await generatePlayerInfos(rightPlayerIDs, msg);
@@ -51,7 +49,7 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
 
     saved_messages.add_message('duelMain', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
         leftPlayers: leftPlayers, rightPlayers: rightPlayers, challengerIDs: leftPlayerIDs, challengedIDs: rightPlayerIDs, msg: mainMsg, 
-        bet: bet, giveReward: giveReward});
+        outsidePkg: outsidePkg, outsideFunction: outsideFunction});
     
     // Cleanup messages
     await delay(1000*60*30);
@@ -93,7 +91,7 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     let endgame = await generateBattle(leftInstances, rightInstances, msg, true, true);
 
     console.log('FIM');
-    await pkg.giveReward(endgame, pkg);
+    await pkg.outsideFunction(endgame, pkg.outsidePkg);
     cleanup(pkg);
 }
 

@@ -12,6 +12,7 @@ module.exports = {
     category: "Battle",
     description: "Take part in an adventure.",
     examples: ["#adventure Space Adventure: Take part in the 'Space Adventure' mission."],
+    details: ['Check the list of adventures with #adventures.'],
     min: 0, max: 5, cooldown: 300, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
     execute: async (com_args, msg) => {
         let bestMatch = [];
@@ -34,7 +35,7 @@ module.exports = {
         m.delete();
         if (bestScore < 0.72) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply(errors.invalidArgs);
+            msg.reply(errors.helpFormatting(module.exports));
             return;
         }
 

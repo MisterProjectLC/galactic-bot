@@ -84,5 +84,6 @@ module.exports = {
         else
             msg.reply({embeds: [helpFormatting(requested_command)] });
     }, 
-    permission: (msg) => true
+    permission: (msg) => true,
+    helpFormatting: helpFormatting
 };

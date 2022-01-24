@@ -26,11 +26,11 @@ var payBet = async (endgame, pkg) => {
     console.log("PAYBET");
     if (endgame == 1)
         await asyncForEach(pkg.challengerIDs, async challengerID => {
-            await rewards.giveCoins(challengerID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+            await rewards.giveCoins(challengerID, pkg.outsidePkg.bet*2, pkg.msg.channel, pkg.originalCommand);
         });
     else if (endgame == 2)
         await asyncForEach(pkg.challengedIDs, async challengedID => {
-            await rewards.giveCoins(challengedID, pkg.bet*2, pkg.msg.channel, pkg.originalCommand);
+            await rewards.giveCoins(challengedID, pkg.outsidePkg.bet*2, pkg.msg.channel, pkg.originalCommand);
         });
 }
 
@@ -47,6 +47,7 @@ module.exports = {
         let challengedID = getUserIDFromMention(com_args[0]);
         if (challengedID === null) {
             msg.reply("Couldn't find the challenged player...");
+            msg.reply(errors.helpFormatting(module.exports));
             return;
         }
 
@@ -108,7 +109,7 @@ module.exports = {
         if (pkg && (emoji === '✅' || emoji === '❌') && user.id === pkg.challengedID && msg.id === pkg.confirmMsg.id) {
             deleteMessage(msg, 'duelConfirmation');
             if (emoji === '✅') {
-                await encounter.generateDuelEncounter(pkg.msg, module.exports, [pkg.challengerID], [pkg.challengedID], pkg.bet, payBet);
+                await encounter.generateDuelEncounter(pkg.msg, module.exports, [pkg.challengerID], [pkg.challengedID], pkg, payBet);
             }
             return;
         }

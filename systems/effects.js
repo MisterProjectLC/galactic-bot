@@ -6,7 +6,7 @@ const effectList = {
         let shieldDamage = halfDamage - leftoverDamage;
         defender.shield = defender.shield - shieldDamage;
 
-        let healthDamage = leftoverDamage + halfDamage;
+        let healthDamage = leftoverDamage + Math.round(Math.max(1, damage/2));
         defender.health = Math.max(0, defender.health - healthDamage);
 
         let shieldMessage = `**${attacker.title}** dealt **${shieldDamage} damage** to **${defender.title}**'s Shields using **${weaponTitle}**!`;
@@ -45,7 +45,7 @@ const effectList = {
         return null;
     },
 
-    virus: (damage, attacker, defender) => {
+    void: (damage, attacker, defender) => {
         let necroDamage = Math.max(1, damage - defender.plate);
         necroDamage = Math.max(0, necroDamage - defender.shield);
         let log = necroDamage > 0;
@@ -53,7 +53,7 @@ const effectList = {
         return  log ? `**${attacker.title}** necroed **${necroDamage} Health** ** from **${defender.title}**!` : null;
     },
 
-    chemical: (damage, attacker, defender) => {
+    bio: (damage, attacker, defender) => {
         let chemicalHeal = Math.max(0, (damage - defender.plate)/2);
         let log = chemicalHeal > 0 && attacker.health < attacker.necroHealth;
         attacker.heal(chemicalHeal);

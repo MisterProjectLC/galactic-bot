@@ -81,12 +81,22 @@ module.exports.Battle = class {
         
         let statusEmbedMsg = await this.channel.send({embeds: leftBattleStatus.concat(rightBattleStatus)});
 
-        this.logMsgs.push(await this.channel.send(`**--BATTLE LOG--**`));
-        this.logMsgs.push(await this.channel.send(`**----**`));
-        this.logMsgs.push(await this.channel.send(`**----**`));
-        this.logMsgs.push(await this.channel.send(`**----**`));
-        this.logMsgs.push(await this.channel.send(`**----**`));
-        this.logMsgs.push(await this.channel.send(`**----**`));
+        let m = await this.channel.send(`**--BATTLE LOG--**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
+        m = await this.channel.send(`**----**`);
+        this.logMsgs.push(m);
 
         let endgame = 0;
         while (true) {
@@ -120,10 +130,15 @@ module.exports.Battle = class {
                 msg.delete().catch((err) => console.log('Could not delete the message', err));
         });
 
-        if (endgame != 0)
-            await this.channel.send("Battle ended! Combatant(s) " + (endgame == 1 ? "A" : "B") + " won!");
-        else
-            await this.channel.send("Battle lasted too long! Combatant(s) B win by default.");
+        let leftName = (this.leftFighters.count >= 2) ? ("Combatants A") : (this.leftFighters[0].title);
+        let rightName = (this.rightFighters.count >= 2) ? ("Combatants B") : (this.rightFighters[0].title);
+
+        if (endgame != 0) {
+            await this.channel.send("Battle ended! " + (endgame == 1 ? leftName : rightName) + " won!");
+        } else {
+            await this.channel.send("Battle lasted too long! " + rightName + " won by default.");
+            endgame = 2;
+        }
         return endgame;
     }
     

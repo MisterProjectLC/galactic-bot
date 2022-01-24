@@ -28,9 +28,9 @@ var generateEnemyEmbed = (title, maxEnemies,  enemyInfos, enemyInfosInGame) => {
     .setDescription("If the battle reaches the 9th round, the enemies win automatically.");
 
     if (maxEnemies > enemyInfosInGame.length && enemyInfos.length >= 1)
-        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel\nHost: Press 🆙 to add an enemy");
+        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)\nHost: Press 🆙 to add an enemy");
     else
-        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel");
+        embed = embed.setFooter("Combatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)");
 
     // Enemies
     enemyInfosInGame.forEach(enemy => {

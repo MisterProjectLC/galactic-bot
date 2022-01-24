@@ -3,8 +3,9 @@ const { codeBlock } = require('@discordjs/builders');
 const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
 const { delay } = require('../utils/delay.js');
+const {deleteMessage} = require('../utils/deleteMessage');
 
-var showShop = async (weapons, armors, channel)  => {
+var showShop = (weapons, armors)  => {
     let weaponTuples = [];
     let armorTuples = [];
 
@@ -51,13 +52,13 @@ var showShop = async (weapons, armors, channel)  => {
             costStr += ' ';
         }
 
-        rowStrings.push(`${indexStr} ${titleStr}  ${costStr}   Level ${min_level}`);
+        rowStrings.push(`${indexStr} ${titleStr} ${costStr} Lvl ${min_level}`);
     }
 
     while (longestTitleLength > titleHeader.length) {
         titleHeader += ' ';
     }
-    let header = `${indexHeader} ${titleHeader}  ${costHeader}   ${levelHeader}`;
+    let header = `${indexHeader} ${titleHeader} ${costHeader} ${levelHeader}`;
 
     let rowStrings = [];
     rowStrings.push("WEAPONS ---");
@@ -67,8 +68,8 @@ var showShop = async (weapons, armors, channel)  => {
     rowStrings.push(header);
     armorTuples.forEach(tuple => setupLine(...tuple));
 
-    let message = `🪐 SHOP 🪐\n\n` + rowStrings.join("\n");
-    channel.send(codeBlock('js', message));
+    let message = `🪐 SHOP 🪐\n\n` + rowStrings.join("\n") + "\n\n//Items in the shop change each day, come back tomorrow to buy new items";
+    return codeBlock('js', message);
 }
 
 
@@ -96,25 +97,43 @@ var showShop = async (weapons, armors, channel)  => {
 
 
 var checkShop = async (com_args, msg) => {
-    let weapons = [];
-    let armors = [];
-    
     let m = await msg.reply("Loading...");
-    let result = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title`);
-    weapons = result.rows;
 
-    result = await db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title`);
-    armors = result.rows;
+    // Delete old shop message
+    let oldShopResult = await db.makeQuery(`SELECT * FROM shopMessage WHERE guild_id = $1`, [msg.guild.id]);
+    let oldMsgExists = (oldShopResult.rowCount >= 1);
+    if (oldMsgExists) {
+        let oldMsg = oldShopResult.rows[0];
+        console.log('Found old shop message. Deleting...');
 
-    await showShop(weapons, armors, msg.channel);
+        msg.guild.channels.fetch(oldMsg.channel_id).then(channel => {
+            channel.messages.fetch(oldMsg.message_id).then(message => {
+                message.delete().catch(err => console.log(err));
+            });
+        });
+    }
+
+    let weaponResult = db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title`);
+    let armorResult = db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title`);
+    let weapons = (await weaponResult).rows;
+    let armors = (await armorResult).rows;
+
+    let shopMsg = await msg.channel.send(showShop(weapons, armors));
+    if (oldMsgExists)
+        db.makeQuery(`UPDATE shopMessage SET message_id = $1, channel_id = $2 WHERE guild_id = $3`, [shopMsg.id, shopMsg.channel.id, shopMsg.guild.id]);
+    else
+        db.makeQuery(`INSERT INTO shopMessage(message_id, channel_id, guild_id) VALUES ($1, $2, $3)`, [shopMsg.id, shopMsg.channel.id, shopMsg.guild.id]);
+
     m.delete().catch(err => console.log("Couldn't delete the message " + err));
 }
+
+
 
 var buyFromShop = async (com_args, msg) => {
     // Get shop index
     let shopIndex = parseInt(com_args[0]);
     if (shopIndex !== shopIndex) {
-        msg.reply(errors.invalidArgs);
+        msg.reply(errors.helpFormatting(module.exports));
         return;
     }
     shopIndex -= 1;
@@ -124,7 +143,7 @@ var buyFromShop = async (com_args, msg) => {
     if (com_args.length > 1) {
         let p = parseInt(com_args[1]);
         if (p !== p) {
-            msg.reply(errors.invalidArgs);
+            msg.reply(errors.helpFormatting(module.exports));
             return;
         }
         purchaseAmount = p;
@@ -134,17 +153,16 @@ var buyFromShop = async (com_args, msg) => {
     let armors = [];
 
     // Check if item exists
-    let result = await db.makeQuery(`SELECT weapons.title, cost_per_level, level, min_level
+    let weaponResult = db.makeQuery(`SELECT weapons.title, cost_per_level, level, min_level
     FROM weapons LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
     (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, weapons.title`, [msg.author.id]);
-    weapons = result.rows;
 
-    result = await db.makeQuery(`SELECT title, cost_per_level, level, min_level
+    let armorResult = db.makeQuery(`SELECT title, cost_per_level, level, min_level
     FROM armors LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
     (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, armors.title`, [msg.author.id]);
-    armors = result.rows;
 
-    //await Promise.all([weapon_promise, armor_promise]);
+    weapons = (await weaponResult).rows;
+    armors = (await armorResult).rows;
 
     if (shopIndex >= weapons.length + armors.length || shopIndex < 0 || purchaseAmount <= 0) {
         msg.reply(errors.invalidArgs);
@@ -182,11 +200,12 @@ var buyFromShop = async (com_args, msg) => {
     m.react('❌');
     saved_messages.add_message('confirmPurchase', m.id, {item: item, purchaseAmount: purchaseAmount, msg: msg, isWeapon: (shopIndex < weapons.length)});
 
-    await delay(1000*900);
+    await delay(1000*120);
     if (saved_messages.get_message('confirmPurchase', m.id) != null) {
-        saved_messages.remove_message('confirmPurchase', m.id);
-        m.reactions.removeAll();
+        msg.delete().catch(err => console.log(err));
+        deleteMessage(m, 'confirmPurchase');
     }
+    
 }
 
 
@@ -207,6 +226,8 @@ module.exports = {
         }
     },
     buyFromShop: buyFromShop,
+    showShop: showShop,
+
     reaction: async (reaction, user) => {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();
@@ -216,27 +237,33 @@ module.exports = {
         if (pkg) {
             if (user.id !== pkg.msg.author.id)
                 return;
+
+            if (emoji !== "✅" && emoji !== "❌")
+                return;
             
             msg.reactions.removeAll();
             saved_messages.remove_message('confirmPurchase', msg.id);
 
-            if (emoji !== "✅") {
+            if (emoji === "❌") {
                 msg.edit("Purchase cancelled.");
-                return;
-            }
-            msg.edit("Purchase confirmed!");
-            
-            db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [user.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
-            if (pkg.isWeapon) {
-                db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
-                console.log("Weapon bought!");
             } else {
-                db.makeQuery(`SELECT buy_armor($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
-                console.log("Armor bought!");
+                msg.edit("Purchase confirmed!");
+                
+                db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [user.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
+                if (pkg.isWeapon) {
+                    db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
+                    console.log("Weapon bought!");
+                } else {
+                    db.makeQuery(`SELECT buy_armor($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
+                    console.log("Armor bought!");
+                }
             }
-            return;
+
+            await delay(1000 * 5);
+            pkg.msg.delete().catch(err => console.log(err));
+            msg.delete().catch(err => console.log(err));
         }
 
     },
-    permission: (msg) => true
+    permission: (msg) => msg.member.roles.cache.some(role => role.name == "Founder")
 };

@@ -128,7 +128,7 @@ module.exports = {
     generatePlayerInfos: async (playerIDs, msg) => {
         let players = [];
 
-        let members = (await msg.guild.members.fetch()).cache;
+        let members = await msg.guild.members.fetch();
 
         await asyncForEach(playerIDs, async playerID => {
             let playerInfo = db.makeQuery(`SELECT * FROM ePlayers WHERE userid ilike $1`, [playerID]);
@@ -141,7 +141,11 @@ module.exports = {
             playerWeapons = (await playerWeapons).rows;
             playerArmors = (await playerArmors).rows;
 
-            let user = members.find(member.user.id == playerID);
+            let user = members.find(member => member.user.id == playerID);
+            if (user)
+                user = user.user;
+            else
+                return;
     
             let weaponMsg = await buildListMessage(null, user, playerInfo.title, "Weapon List", "Choose 2 weapons:",
             playerWeapons, buildWeaponLine, 0, emojiNumbers.length);

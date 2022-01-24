@@ -3,6 +3,7 @@ const {delay} = require('../utils/delay');
 const constants = require('../data/constants');
 const rewards = require('../systems/rewards');
 const {asyncForEach} = require('../utils/asyncForEach');
+const {showShop} = require('../commands/shop');
 
 var Client;
 
@@ -38,7 +39,7 @@ var refreshBosses = () => {
 
 
 const AVAILABLE_ITEMS_PER_DAY = 3;
-var makeAvailable = (items, tableName) => {
+var makeAvailable = async (items, tableName) => {
     // Separate items into tiers
     tiers = {};
     items.forEach(item => {
@@ -49,18 +50,15 @@ var makeAvailable = (items, tableName) => {
     });
 
     // Make 3 available for each tier
-    Object.values(tiers).forEach(tier => {
+   await asyncForEach(Object.values(tiers), async tier => {
         while (tier.length > AVAILABLE_ITEMS_PER_DAY) {
             tier.splice(Math.floor(Math.random() * tier.length), 1);
         }
 
         console.log("tier");
         console.log(tier);
-        try {
-            db.makeQuery(`UPDATE ${tableName} SET in_shop = true WHERE id = ANY ($1)`, [tier]);
-        } catch (e) {
-            console.log(`Error ${e}: UPDATE ${tableName} SET in_shop = true WHERE id = ANY ($1)`);
-        }
+        
+        await db.makeQuery(`UPDATE ${tableName} SET in_shop = true WHERE id = ANY ($1)`, [tier]).catch(err => console.log(err));
     });
 }
 
@@ -75,8 +73,29 @@ var rotatingShop = async () => {
         weapons = (await weapons).rows;
         armors = (await armors).rows;
 
-        makeAvailable(weapons, 'weapons');
-        makeAvailable(armors, 'armors');
+        await makeAvailable(weapons, 'weapons');
+        await makeAvailable(armors, 'armors');
+
+        // Edit old shop messages
+        Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
+            guild.fetch().then(async guild => {
+                let oldShopResult = await db.makeQuery(`SELECT * FROM shopMessage WHERE guild_id = $1`, [guild.id]);
+                if (oldShopResult.rowCount >= 1) {
+                    let oldMsg = oldShopResult.rows[0];
+
+                    weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
+                    armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
+                    weapons = (await weapons).rows;
+                    armors = (await armors).rows;
+
+                    guild.channels.fetch(oldMsg.channel_id).then(channel => {
+                        channel.messages.fetch(oldMsg.message_id).then(message => {
+                            message.edit(showShop(weapons, armors)).catch(err => console.log(err));
+                        });
+                    });
+                }
+            });
+        }))
     });
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
 }
@@ -97,14 +116,14 @@ var spaceClubUpdate = async () => {
         })
     })).catch(console.error);
 
-    console.log(memberList);
+    //console.log(memberList);
 
     let newClubList = [];
     let kickList = [];
 
     let nonMembers = (await db.makeQuery('SELECT userid FROM players WHERE spaceClub = false')).rows;
-    console.log('nonMembers');
-    console.log(nonMembers);
+    //console.log('nonMembers');
+    //console.log(nonMembers);
 
     await asyncForEach(memberList, async member => {
         if (member.roles.cache.some(role => role.name == "SpaceClub") && nonMembers.some(row => row.userid == member.user.id)
@@ -117,10 +136,10 @@ var spaceClubUpdate = async () => {
             kickList.push(member.user.id);
     });
 
-    console.log('newClubList');
-    console.log(newClubList);
-    console.log('kickList');
-    console.log(kickList);
+    //console.log('newClubList');
+    //console.log(newClubList);
+    //console.log('kickList');
+    //console.log(kickList);
 
     db.makeQuery('UPDATE players SET spaceClub = true WHERE spaceClub = false AND userid = ANY($1)', [newClubList]);
     await db.makeQuery('UPDATE players SET spaceClub = false, level = GREATEST(1, level - 20) WHERE spaceClub = true AND userid = ANY($1)', [kickList]);
@@ -136,7 +155,7 @@ var initializePeriodic = async (client) => {
     await delay(10*1000);
     setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
     setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
-    setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
+    setTimeout(rotatingShop, 10 * 1000);
     setTimeout(spaceClubUpdate, 1000);
 }
 

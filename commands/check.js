@@ -56,26 +56,26 @@ module.exports = {
             embed = embed
             .addField(`Info`,
                 `Cost: ${weapons[i].cost_per_level}
-                Min Level to buy: ${weapons[i].min_level}
-                Your level with this: ${weapons[i].level !== null ? weapons[i].level : 0}`, true)
+Min Level to buy: ${weapons[i].min_level}
+Your level with this: ${weapons[i].level !== null ? weapons[i].level : 0}`, true)
             .addField(`Stats`,
                 `Damage per Level: ${weapons[i].damage_per_level}
-                Rate of Attack: ${weapons[i].rate}
-                Effect: ${weapons[i].effect_title !== null ? capitalize(weapons[i].effect_title) : "None"}`, true);
+Rate of Attack: ${weapons[i].rate}
+Effect: ${weapons[i].effect_title !== null ? capitalize(weapons[i].effect_title) : "None"}`, true);
 
         } else if (i < weapons.length + armors.length) {
             i -= weapons.length;
             embed = embed
             .addField(`Info`,
                 `Cost: ${armors[i].cost_per_level}
-                Min Level to buy: ${armors[i].min_level}
-                Your level with this: ${armors[i].level !== null ? armors[i].level : 0}`, true)
+Min Level to buy: ${armors[i].min_level}
+Your level with this: ${armors[i].level !== null ? armors[i].level : 0}`, true)
             .addField(`Stats`,
                 `Health: ${armors[i].health}
-                Shields: ${armors[i].shield}
-                Plate: ${armors[i].plate}
-                Regen: ${armors[i].regen}
-                Evasion: ${armors[i].evasion}`, true);
+Shields: ${armors[i].shield}
+Plate: ${armors[i].plate}
+Regen: ${armors[i].regen}
+Evasion: ${armors[i].evasion}`, true);
         }
 
         msg.reply({embeds: [embed]});

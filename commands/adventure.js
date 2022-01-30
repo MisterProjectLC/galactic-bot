@@ -8,7 +8,7 @@ const compareTwoStrings = require('string-similarity').compareTwoStrings;
 // Exports
 module.exports = {
     name: "adventure", 
-    nickname: ["adv"],
+    nicknames: ["adv"],
     category: "Battle",
     description: "Take part in an adventure.",
     examples: ["#adventure Space Adventure: Take part in the 'Space Adventure' mission."],

@@ -38,14 +38,20 @@ let buildArmorLine = (armor) => {
         capitalize(armor.effect_title) : "None"}`;
 };
 
-let buildListMessage = async (msg, user, playerTitle, title, description, list, lineBuilder, min, max, selected = []) => {
+let buildListMessage = async (msg, user, playerTitle, title, description, list, lineBuilder, min, max, selected = [], errorChannel) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle(`**${playerTitle} - ${title}**`)
     .setDescription(`${description}`);
 
     if (msg === null) {
-        msg = await user.send({embeds: [embed]});
+        let erred = false;
+        msg = await user.send({embeds: [embed]}).catch(err => {
+            errorChannel.send("You must enable permissions for direct messages from members of the same channel...");
+            erred = true;
+        });
+        if (erred)
+            return;
     }
 
     let row = new Discord.MessageActionRow()
@@ -159,10 +165,10 @@ module.exports = {
                 return;
     
             let weaponMsg = await buildListMessage(null, user, playerInfo.title, "Weapon List", "Choose 2 weapons:",
-            playerWeapons, buildWeaponLine, 0, emojiNumbers.length);
+            playerWeapons, buildWeaponLine, 0, emojiNumbers.length, [], msg.channel);
             
             let armorMsg = await buildListMessage(null, user, playerInfo.title, "Armor List", "Choose 2 armors:",
-            playerArmors, buildArmorLine, 0, emojiNumbers.length);
+            playerArmors, buildArmorLine, 0, emojiNumbers.length, [], msg.channel);
     
             players.push({info:playerInfo, user: user, confirmed: false,
                 weapons:{list: playerWeapons, selected: [], msg: weaponMsg, page: 0}, 

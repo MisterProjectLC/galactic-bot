@@ -44,8 +44,6 @@ var resolveDuel = async (endgame, pkg) => {
         tournaments[pkg.hostID] = tournament;
 
         // Run next duel
-        console.log("GENERATE DUEL");
-        console.log(tournament.currentIndex);
         generateDuel(pkg.msg, module.exports, [tournament.duels[tournament.currentIndex][0].id], 
             [tournament.duels[tournament.currentIndex][1].id], pkg, resolveDuel);
         return;
@@ -55,6 +53,7 @@ var resolveDuel = async (endgame, pkg) => {
     let winner = tournament.duels[0][0];
     pkg.msg.channel.send("The tournament is over! THE WINNER IS **" + winner.title + "**!")
     await rewards.giveCoins(winner.id, tournament.pkg.entryFee*tournament.pkg.tournamentSize, tournament.pkg.msg.channel, module.exports);
+    delete tournaments[pkg.hostID];
 }
 
 
@@ -67,15 +66,11 @@ var confirmTournament = async (pkg) => {
         duels.push([participants[i], participants[i+1]]);
     }
 
-    console.log("DUELS");
-    console.log(duels);
-
-    // Take coins
-
     // Create board
     let boardMsg = await pkg.msg.channel.send({embeds: [createBoard(duels, pkg)] });
     // Create tournament
     tournaments[pkg.hostID] = {currentIndex: 0, duels: duels, pkg: pkg, boardMsg: boardMsg};
+    console.log(tournaments);
     // Run first duel
     generateDuel(pkg.msg, module.exports, [duels[0][0].id], [duels[0][1].id], pkg, resolveDuel);
 };
@@ -84,7 +79,7 @@ var confirmTournament = async (pkg) => {
 var createBoard = (duels, pkg) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
-    .setTitle(`${pkg.participants[0].title}'s Tournament`);
+    .setTitle(`${pkg.hostTitle}'s Tournament`);
 
     let duelList = '';
     for (let i = 0; i < duels.length; i++) {
@@ -152,6 +147,13 @@ module.exports = {
             }
         }
 
+        // Check if tournament already in progress
+        if (module.exports.findTournamentMessage(msg.author.id) != null) {
+            msg.reply("You already have a tournament in progress...");
+            return;
+        }
+
+
         // Check if host exists
         let result = await db.makeQuery('SELECT title, coins, userid as id FROM players WHERE userid = $1', [msg.author.id]);
         if (result.rowCount < 1) {
@@ -170,11 +172,14 @@ module.exports = {
         m.react('🔼');
 
         // Create tournament message
-        if (tournaments[msg.author.id]) {
-            tournaments[msg.author.id].delete().catch((err) => console.log('Could not delete the message', err));
-            saved_messages.remove_message('prepareTournament', tournaments[msg.author.id].id);
+        if (saved_messages.get_message('prepareTournamentUser', msg.author.id) != null) {
+            deleteMessage(saved_messages.get_message('prepareTournament', saved_messages.get_message('prepareTournamentUser', msg.author.id)).msg,
+            'prepareTournament');
+            saved_messages.remove_message('prepareTournamentUser');
         }
-        saved_messages.add_message('prepareTournament', m.id, {hostID: msg.author.id, participants: participants, 
+        
+            saved_messages.add_message('prepareTournamentUser', msg.author.id, m.id);
+        saved_messages.add_message('prepareTournament', m.id, {hostID: msg.author.id, hostTitle: participants[0].title, participants: participants, 
             tournamentSize: tournamentSize, entryFee: entryFee, msg: m});
 
     }, 
@@ -211,18 +216,19 @@ module.exports = {
                     pkg.participants.push(result.rows[0]);
                 else
                     await removeReactions(msg, user);
-            } else if (pkg.participants.includes(result.rows[0]))
-                pkg.participants.splice(pkg.participants.indexOf(result.rows[0]), 1);
+            } else if (pkg.participants.some(participant => {return participant.id == result.rows[0].id}))
+                pkg.participants.splice(pkg.participants.findIndex(participant => {return participant.id == result.rows[0].id}), 1);
             else
                 return;
         }
 
         // Confirm reaction
-        else if (emoji === '✅' && user.id == pkg.hostID) {
-            // TODO: entry fee
-            //db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE $1`, [pkg.participants, pkg.bet]);
+        else if (emoji === '✅' && pkg.participants.length >= pkg.tournamentSize && user.id == pkg.hostID) {
+            let ids = pkg.participants.map(participant => {return participant.id});
+            db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE ANY($1)`, [ids, pkg.entryFee]);
             confirmTournament(pkg);
             deleteMessage(msg, 'prepareTournament');
+            saved_messages.remove_message('prepareTournamentUser', pkg.hostID);
             return;
         }
         

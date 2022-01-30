@@ -12,8 +12,10 @@ var cleanup = (pkg, name) => {
     // Cleanup
     if (saved_messages.get_message(name+'Main', pkg.msg.id) != null) {
         pkg.players.forEach(player => {
-            deleteMessage(player.weapons.msg, name+'Player');
-            deleteMessage(player.armors.msg, name+'Player');
+            if (player.weapons.msg)
+                deleteMessage(player.weapons.msg, name+'Player');
+            if (player.armors.msg)
+                deleteMessage(player.armors.msg, name+'Player');
         });
 
         deleteMessage(pkg.msg, name+'Main');
@@ -25,12 +27,12 @@ var generateEnemyEmbed = (title, maxEnemies,  enemyInfos, enemyInfosInGame) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle(title + " - Enemy List")
-    .setDescription("If the battle reaches the 9th round, the enemies win automatically.");
+    .setDescription("Choose your weapons/armors in my private messages.\nIf the battle reaches the 9th round, the enemies win automatically.");
 
     if (maxEnemies > enemyInfosInGame.length && enemyInfos.length >= 1)
-        embed = embed.setFooter("Choose your weapons/armors in my private messages\nCombatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)\nHost: Press 🆙 to add an enemy");
+        embed = embed.setFooter("Choose your weapons/armors in your private messages\nCombatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)\nHost: Press 🆙 to add an enemy");
     else
-        embed = embed.setFooter("Choose your weapons/armors in my private messages\nCombatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)");
+        embed = embed.setFooter("Choose your weapons/armors in your private messages\nCombatant(s): Press ✅ when ready\nHost: Press ❌ to cancel (WARNING: You don't regain your visits!)");
 
     // Enemies
     enemyInfosInGame.forEach(enemy => {
@@ -53,7 +55,9 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
     enemyInfos.splice(r, 1);
 
     // Create summary message
+    let erred = false;
     let mainMsg = await msg.channel.send({embeds: [generateEnemyEmbed(title, maxEnemies, enemyInfos, enemyInfosInGame)]});
+
     mainMsg.react('✅').catch(err => console.log(err));
     mainMsg.react('❌').catch(err => console.log(err));
     if (maxEnemies > 1 && enemyInfos.length >= 1)
@@ -61,7 +65,9 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
 
     // Register messages
     players.forEach(player => {
-        saved_messages.add_message(command.name+'Player', player.weapons.msg.id, mainMsg.id);
+        if (player.weapons.msg)
+            saved_messages.add_message(command.name+'Player', player.weapons.msg.id, mainMsg.id);
+        if (player.armors.msg)
         saved_messages.add_message(command.name+'Player', player.armors.msg.id, mainMsg.id);
     });
 

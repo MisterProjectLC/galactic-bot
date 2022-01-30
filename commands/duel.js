@@ -24,20 +24,19 @@ function getUserIDFromMention(mention) {
 
 var payBet = async (endgame, pkg) => {
     console.log("PAYBET");
+    console.log(pkg.challengerID);
+    console.log(pkg.challengedID);
     if (endgame == 1)
-        await asyncForEach(pkg.challengerIDs, async challengerID => {
-            await rewards.giveCoins(challengerID, pkg.outsidePkg.bet*2, pkg.msg.channel, pkg.originalCommand);
-        });
+        await rewards.giveCoins(pkg.challengerID, pkg.bet*2, pkg.msg.channel, module.exports);
     else if (endgame == 2)
-        await asyncForEach(pkg.challengedIDs, async challengedID => {
-            await rewards.giveCoins(challengedID, pkg.outsidePkg.bet*2, pkg.msg.channel, pkg.originalCommand);
-        });
+        await rewards.giveCoins(pkg.challengedID, pkg.bet*2, pkg.msg.channel, module.exports);
 }
 
 
 // Exports
 module.exports = {
     name: "duel",
+    nicknames: ["challenge"],
     category: "Battle",
     description: "Challenge another player to a duel.",
     examples: ["#duel @User: challenge the mentioned user to a duel.",

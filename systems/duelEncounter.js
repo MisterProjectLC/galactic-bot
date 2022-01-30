@@ -5,7 +5,7 @@ const { delay } = require('../utils/delay.js');
 const {generatePlayers, generatePlayerInfos, generateBattle, updateInventory} = require('./encounterHelper');
 const {deleteMessage} = require('../utils/deleteMessage');
 
-const LOADOUT_TIME = 90;
+const LOADOUT_TIME = 10;
 const TIME_INCREMENT = 5;
 
 var cleanup = (pkg) => {
@@ -29,8 +29,8 @@ var generateEmbed = (time, leftPlayers, rightPlayers) => {
     return new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setTitle("Duel - " + leftPlayers[0].info.title + " VS " + rightPlayers[0].info.title)
-    .setDescription("The challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
-    .setFooter(`Choose your weapons/armors in my private messages\nCombatants: Press ✅ when ready\nTime left to decide: ${LOADOUT_TIME-time} seconds`);
+    .setDescription("Choose your weapons/armors in my private messages.\nThe challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
+    .setFooter(`Choose your weapons/armors in your private messages\nCombatants: Press ✅ when ready\nTime left to decide: ${LOADOUT_TIME-time} seconds`);
 }
 
 var decisionTimer = async (mainMsg, leftPlayers, rightPlayers, pkg, outsideFunction) => {
@@ -56,14 +56,14 @@ var decisionTimer = async (mainMsg, leftPlayers, rightPlayers, pkg, outsideFunct
 
     if (leftConfirmed && !rightConfirmed) {
         await mainMsg.channel.send("Combatant(s) B timed out! Combatant(s) A won.");
-        outsideFunction(1, pkg);
+        outsideFunction(1, pkg.outsidePkg);
     } else if (!leftConfirmed && rightConfirmed) {
         await mainMsg.channel.send("Combatant(s) A timed out! Combatant(s) B won.");
-        outsideFunction(2, pkg);
+        outsideFunction(2, pkg.outsidePkg);
     }
     else if (!leftConfirmed && !rightConfirmed) {
-        await mainMsg.channel.send("Both timed out! Winner chosen by random...");
-        outsideFunction(1 + Math.floor(Math.random() * 2), pkg);
+        await mainMsg.channel.send("Both timed out! Winner chosen at random...");
+        outsideFunction(1 + Math.floor(Math.random() * 2), pkg.outsidePkg);
     }
 
     if (saved_messages.get_message('duelMain', mainMsg.id) != null)

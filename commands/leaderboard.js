@@ -71,10 +71,15 @@ module.exports = {
     description: "Check the leaderboards.", 
     min: 0, max: 0, cooldown: 10,
     execute: async (com_args, msg) => {
-        let achievers = db.makeQuery(`SELECT victory_time, title FROM players WHERE victory_time IS NOT NULL ORDER BY victory_time ASC`);
-        let players = db.makeQuery(`SELECT level, xp, title FROM players ORDER BY level DESC, xp DESC`);
+        let achievers = db.makeQuery(`SELECT victory_time, title FROM players WHERE victory_time IS NOT NULL AND is_founder = false ORDER BY victory_time ASC`);
+        let players = db.makeQuery(`SELECT level, xp, title FROM players WHERE is_founder = false ORDER BY level DESC, xp DESC`);
         achievers = (await achievers).rows;
         players = (await players).rows;
+
+        if (achievers.length + players.length <= 0) {
+            msg.reply("The leaderboards are empty...")
+            return;
+        }
 
         let m = await msg.channel.send("Loading...");
 
@@ -87,6 +92,7 @@ module.exports = {
             rows.push({title: players[i].title, level: players[i].level, xp: players[i].xp});
 
         let maxPages = Math.ceil(rows.length/LINES_PER_PAGE);
+
         let table = await msg.reply(await generatePage(rows.slice(0, LINES_PER_PAGE), 0, maxPages));
         table.react("◀️");
         table.react("▶️");
@@ -117,6 +123,7 @@ module.exports = {
                 pkg.page += 1;
             
             removeReactions(msg, user.id);
+
             let page = await generatePage(pkg.rows.slice(pkg.page*LINES_PER_PAGE, (pkg.page+1)*LINES_PER_PAGE),
                             pkg.page, pkg.maxPages);
             msg.edit(page);

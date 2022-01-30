@@ -5,7 +5,7 @@ const asyncForEach = require('../utils/asyncForEach').asyncForEach;
 // Exports
 module.exports = {
     name: "adventures", 
-    nickname: ["advs"],
+    nicknames: ["advs"],
     category: "Battle",
     description: "Check all available adventures.", 
     min: 0, max: 0, cooldown: 5,

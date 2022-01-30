@@ -5,6 +5,9 @@ const { delay } = require('../utils/delay.js');
 const {generatePlayers, generatePlayerInfos, generateBattle, updateInventory} = require('./encounterHelper');
 const {deleteMessage} = require('../utils/deleteMessage');
 
+const LOADOUT_TIME = 10;
+const TIME_INCREMENT = 5;
+
 var cleanup = (pkg) => {
     // Cleanup
     if (saved_messages.get_message('duelMain', pkg.msg.id) != null) {
@@ -21,21 +24,60 @@ var cleanup = (pkg) => {
     }
 }
 
+// Embed
+var generateEmbed = (time, leftPlayers, rightPlayers) => {
+    return new Discord.MessageEmbed()
+    .setColor(0x1d51cc)
+    .setTitle("Duel - " + leftPlayers[0].info.title + " VS " + rightPlayers[0].info.title)
+    .setDescription("Choose your weapons/armors in my private messages.\nThe challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
+    .setFooter(`Choose your weapons/armors in your private messages\nCombatants: Press ✅ when ready\nTime left to decide: ${LOADOUT_TIME-time} seconds`);
+}
+
+var decisionTimer = async (mainMsg, leftPlayers, rightPlayers, pkg, outsideFunction) => {
+    // Update timer
+    let time = 0;
+    while (time < LOADOUT_TIME) {
+        await delay(1000*TIME_INCREMENT);
+        time += TIME_INCREMENT;
+        await mainMsg.edit({embeds: [generateEmbed(time, leftPlayers, rightPlayers)]}).catch(err => {});
+    }
+
+    // Left or right confirmed
+    let leftConfirmed = true;
+    leftPlayers.forEach(player => {
+        if (!player.confirmed)
+            leftConfirmed = false;
+    });
+    let rightConfirmed = true;
+    rightPlayers.forEach(player => {
+        if (!player.confirmed)
+            rightConfirmed = false;
+    });
+
+    if (leftConfirmed && !rightConfirmed) {
+        await mainMsg.channel.send("Combatant(s) B timed out! Combatant(s) A won.");
+        outsideFunction(1, pkg.outsidePkg);
+    } else if (!leftConfirmed && rightConfirmed) {
+        await mainMsg.channel.send("Combatant(s) A timed out! Combatant(s) B won.");
+        outsideFunction(2, pkg.outsidePkg);
+    }
+    else if (!leftConfirmed && !rightConfirmed) {
+        await mainMsg.channel.send("Both timed out! Winner chosen at random...");
+        outsideFunction(1 + Math.floor(Math.random() * 2), pkg.outsidePkg);
+    }
+
+    if (saved_messages.get_message('duelMain', mainMsg.id) != null)
+        cleanup(saved_messages.get_message('duelMain', mainMsg.id));
+}
+
 
 var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, outsidePkg, outsideFunction) => {
     // Players + Create weapons/armor messages
     let leftPlayers = await generatePlayerInfos(leftPlayerIDs, msg);
     let rightPlayers = await generatePlayerInfos(rightPlayerIDs, msg);
 
-    // Embed
-    let embed = new Discord.MessageEmbed()
-    .setColor(0x1d51cc)
-    .setTitle("Duel - " + leftPlayers[0].info.title + " VS " + rightPlayers[0].info.title)
-    .setDescription("The challenger gets to attack first. However, if the fight reaches the 9th round, the challenged player wins automatically.")
-    .setFooter("Choose your weapons/armors in my private messages\nCombatants: Press ✅ when ready");
-
     // Create summary message
-    let mainMsg = await msg.channel.send({embeds: [embed]});
+    let mainMsg = await msg.channel.send({embeds: [generateEmbed(0, leftPlayers, rightPlayers)]});
     mainMsg.react('✅').catch(err => console.log(err));
 
     // Register messages
@@ -47,10 +89,16 @@ var generateDuelEncounter = async (msg, command, leftPlayerIDs, rightPlayerIDs, 
     leftPlayers.forEach(registerPlayer);
     rightPlayers.forEach(registerPlayer);
 
+    let pkg = {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
+        leftPlayers: leftPlayers, rightPlayers: rightPlayers, challengerIDs: leftPlayerIDs, challengedIDs: rightPlayerIDs, msg: mainMsg, 
+        outsidePkg: outsidePkg, outsideFunction: outsideFunction};
+
     saved_messages.add_message('duelMain', mainMsg.id, {hostID: msg.author.id, originalCommand: command, originalMsg: msg,
         leftPlayers: leftPlayers, rightPlayers: rightPlayers, challengerIDs: leftPlayerIDs, challengedIDs: rightPlayerIDs, msg: mainMsg, 
         outsidePkg: outsidePkg, outsideFunction: outsideFunction});
-    
+
+    decisionTimer(mainMsg, leftPlayers, rightPlayers, pkg, outsideFunction);
+
     // Cleanup messages
     await delay(1000*60*30);
     if (saved_messages.get_message('duelMain', mainMsg.id) != null)
@@ -82,8 +130,6 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
         return;
 
     // Player
-    db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE ANY($1)`, [pkg.challengerIDs, pkg.bet]);
-    db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE ANY($1)`, [pkg.challengedIDs, pkg.bet]);
     let leftInstances = generatePlayers(pkg.leftPlayers);
     let rightInstances = generatePlayers(pkg.rightPlayers);
 
@@ -112,10 +158,8 @@ var onReaction = async (reaction, user, added) => {
             return;
 
         // Confirm reaction
-        if (pkg.msg.id == msg.id) {
+        if (pkg.msg.id == msg.id)
             confirmDuelEncounter(reaction, user, pkg, added);
-            return;
-        }
     }
 }
 
@@ -149,7 +193,7 @@ var onInteraction = (interaction, command) => {
         }
 
         if (rightPlayerIdx !== -1) {
-            updatedPkg = updateInventory(reaction, user, pkg.rightPlayers[rightPlayerIdx]);
+            updatedPkg = updateInventory(interaction, pkg.rightPlayers[rightPlayerIdx]);
             if (updatedPkg !== null)
                 pkg.rightPlayers[rightPlayerIdx] = updatedPkg;
             return;

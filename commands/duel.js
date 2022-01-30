@@ -24,20 +24,19 @@ function getUserIDFromMention(mention) {
 
 var payBet = async (endgame, pkg) => {
     console.log("PAYBET");
+    console.log(pkg.challengerID);
+    console.log(pkg.challengedID);
     if (endgame == 1)
-        await asyncForEach(pkg.challengerIDs, async challengerID => {
-            await rewards.giveCoins(challengerID, pkg.outsidePkg.bet*2, pkg.msg.channel, pkg.originalCommand);
-        });
+        await rewards.giveCoins(pkg.challengerID, pkg.bet*2, pkg.msg.channel, module.exports);
     else if (endgame == 2)
-        await asyncForEach(pkg.challengedIDs, async challengedID => {
-            await rewards.giveCoins(challengedID, pkg.outsidePkg.bet*2, pkg.msg.channel, pkg.originalCommand);
-        });
+        await rewards.giveCoins(pkg.challengedID, pkg.bet*2, pkg.msg.channel, module.exports);
 }
 
 
 // Exports
 module.exports = {
     name: "duel",
+    nicknames: ["challenge"],
     category: "Battle",
     description: "Challenge another player to a duel.",
     examples: ["#duel @User: challenge the mentioned user to a duel.",
@@ -109,6 +108,8 @@ module.exports = {
         if (pkg && (emoji === '✅' || emoji === '❌') && user.id === pkg.challengedID && msg.id === pkg.confirmMsg.id) {
             deleteMessage(msg, 'duelConfirmation');
             if (emoji === '✅') {
+                db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE $1`, [pkg.challengerID, pkg.bet]);
+                db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE $1`, [pkg.challengedID, pkg.bet]);
                 await encounter.generateDuelEncounter(pkg.msg, module.exports, [pkg.challengerID], [pkg.challengedID], pkg, payBet);
             }
             return;

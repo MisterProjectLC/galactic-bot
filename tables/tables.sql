@@ -21,6 +21,8 @@ CREATE TABLE players (
 	entity int,
 	adventures_left int,
 	bosses_left int,
+	last_daily timestamp,
+	last_weekly timestamp,
 	victory_time timestamp,
 	title text,
 	imageurl text,

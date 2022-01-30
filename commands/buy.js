@@ -3,6 +3,7 @@ const shop = require('./shop');
 // Exports
 module.exports = {
     name: "buy",
+    nicknames: ["purchase"],
     category: "Shop",
     description: "Buy/upgrade equipment.", 
     examples: ["#buy 10: buy/upgrade the 10th equipment in the shop.",

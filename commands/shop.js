@@ -4,6 +4,7 @@ const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
 const { delay } = require('../utils/delay.js');
 const {deleteMessage} = require('../utils/deleteMessage');
+const fixedMessage = require('../utils/fixedMessage');
 
 var showShop = (weapons, armors)  => {
     let weaponTuples = [];
@@ -100,29 +101,17 @@ var checkShop = async (com_args, msg) => {
     let m = await msg.reply("Loading...");
 
     // Delete old shop message
-    let oldShopResult = await db.makeQuery(`SELECT * FROM shopMessage WHERE guild_id = $1`, [msg.guild.id]);
-    let oldMsgExists = (oldShopResult.rowCount >= 1);
-    if (oldMsgExists) {
-        let oldMsg = oldShopResult.rows[0];
-        console.log('Found old shop message. Deleting...');
+    let oldMsgExists = fixedMessage.deleteOldMessage(msg, 'shop');
 
-        msg.guild.channels.fetch(oldMsg.channel_id).then(channel => {
-            channel.messages.fetch(oldMsg.message_id).then(message => {
-                message.delete().catch(err => console.log(err));
-            });
-        });
-    }
-
+    // Obtain product list
     let weaponResult = db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title`);
     let armorResult = db.makeQuery(`SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title`);
     let weapons = (await weaponResult).rows;
     let armors = (await armorResult).rows;
 
+    // Send new message
     let shopMsg = await msg.channel.send(showShop(weapons, armors));
-    if (oldMsgExists)
-        db.makeQuery(`UPDATE shopMessage SET message_id = $1, channel_id = $2 WHERE guild_id = $3`, [shopMsg.id, shopMsg.channel.id, shopMsg.guild.id]);
-    else
-        db.makeQuery(`INSERT INTO shopMessage(message_id, channel_id, guild_id) VALUES ($1, $2, $3)`, [shopMsg.id, shopMsg.channel.id, shopMsg.guild.id]);
+    fixedMessage.updateFixedMessage(oldMsgExists, shopMsg, 'shop');
 
     m.delete().catch(err => console.log("Couldn't delete the message " + err));
 }
@@ -265,5 +254,5 @@ module.exports = {
         }
 
     },
-    permission: (msg) => msg.member.roles.cache.some(role => role.name == "Founder")
+    permission: (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
 };

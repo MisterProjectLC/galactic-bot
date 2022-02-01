@@ -1,8 +1,7 @@
 const db = require('../external/database.js');
 const { codeBlock } = require('@discordjs/builders');
-const { deleteMessage } = require('../utils/deleteMessage'); 
 const saved_messages = require('../utils/saved_messages');
-const { delay } = require('../utils/delay'); 
+const fixedMessage = require('../utils/fixedMessage');
 const {removeReactions} = require('../utils/removeReactions');
 
 const LINES_PER_PAGE = 10;
@@ -93,15 +92,15 @@ module.exports = {
 
         let maxPages = Math.ceil(rows.length/LINES_PER_PAGE);
 
-        let table = await msg.reply(await generatePage(rows.slice(0, LINES_PER_PAGE), 0, maxPages));
+        let oldMsgExists = fixedMessage.deleteOldMessage(msg, 'leaderboard');
+
+        let table = await msg.channel.send(await generatePage(rows.slice(0, LINES_PER_PAGE), 0, maxPages));
         table.react("◀️");
         table.react("▶️");
+        fixedMessage.updateFixedMessage(oldMsgExists, table, 'leaderboard');
 
         saved_messages.add_message('leaderboardsPageTurn', table.id, {callerID: msg.author.id, page: 0, maxPages: maxPages, rows: rows});
         m.delete();
-
-        await delay(1000*60*5);
-        deleteMessage(table, 'leaderboardsPageTurn');
     }, 
 
     reaction: async (reaction, user, added) => {

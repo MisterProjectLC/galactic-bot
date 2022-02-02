@@ -1,8 +1,9 @@
 const timeFormatter = require('./timeFormatter').timeFormatter;
 const Discord = require('discord.js');
+const delay = require('../utils/delay').delay;
 var usageCooldowns = new Discord.Collection();
 
-var checkCooldown = (command, msg) => {
+var checkCooldown = async (command, msg) => {
     // Checa cooldown - créditos para Marcus Vinicius Natrielli Garcia
     if (!usageCooldowns.has(command.name))
         usageCooldowns.set(command.name, new Discord.Collection());
@@ -15,10 +16,15 @@ var checkCooldown = (command, msg) => {
 
         if (now < expirationTime) {
             const timeLeft = (expirationTime - now) / 1000;
+            let m;
             if (command.cooldownMessage)
-                msg.reply(command.cooldownMessage.replace( 'xxx', timeFormatter(timeLeft.toFixed(1)) ));
+                m = await msg.reply(command.cooldownMessage.replace( 'xxx', timeFormatter(timeLeft.toFixed(1)) ));
             else
-                msg.reply(`Please wait ${timeFormatter(timeLeft.toFixed(1))} before using this command again`);
+                m = await msg.reply(`Please wait ${timeFormatter(timeLeft.toFixed(1))} before using this command again`);
+
+            await delay(1000*5);
+            msg.delete().catch(err => console.log(err));
+            m.delete().catch(err => console.log(err));
             return false;
         }
     }

@@ -2,6 +2,7 @@ const db = require('../external/database.js');
 const Discord = require('discord.js');
 const errors = require('../data/errors');
 const {capitalize} = require('../utils/capitalize');
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -80,5 +81,5 @@ Evasion: ${armors[i].evasion}`, true);
 
         msg.reply({embeds: [embed]});
     },
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

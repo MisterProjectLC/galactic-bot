@@ -5,7 +5,7 @@ const errors = require('../data/errors');
 const encounter = require('../systems/duelEncounter');
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
-const {asyncForEach} = require('../utils/asyncForEach');
+const {isValid} = require('../systems/autoDeleter');
 
 function getUserIDFromMention(mention) {
 	if (!mention) return;
@@ -122,5 +122,5 @@ module.exports = {
         encounter.onInteraction(interact);
     },
 
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

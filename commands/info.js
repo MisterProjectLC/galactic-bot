@@ -5,6 +5,7 @@ const saved_messages = require('../utils/saved_messages');
 const {removeReactions} = require('../utils/removeReactions');
 const {capitalize} = require('../utils/capitalize');
 const {xpThreshold} = require('../systems/rewards');
+const {isValid} = require('../systems/autoDeleter');
 
 const ITENS_PER_VIEWING = 6;
 
@@ -108,7 +109,7 @@ module.exports = {
             armor_info: {list:player_armors, selected: [], msg: armor_msg, page: 0}});
     },
 
-    permission: (msg) => true,
+    permission: async (msg) => await isValid(msg, module.exports.name),
     reaction: (reaction, user) => {
         let msg = reaction.message;
 

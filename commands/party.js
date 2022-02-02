@@ -3,6 +3,7 @@ const Discord = require('discord.js');
 const saved_messages = require('../utils/saved_messages');
 const errors = require('../data/errors');
 const {removeReactions} = require('../utils/removeReactions');
+const {isValid} = require('../systems/autoDeleter');
 
 const emojiNumbers = ['2️⃣', '3️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
 
@@ -132,6 +133,6 @@ module.exports = {
         msg.edit({embeds: [await createEmbed(pkg.members, result.rows, pkg.partySize)] });
         saved_messages.add_message('party', msg.id, {callerID: pkg.callerID, members: pkg.members, partySize: pkg.partySize, msg: msg});
     },
-    permission: (msg) => true,
+    permission: async (msg) => await isValid(msg, module.exports.name),
     findPartyMessage: (hostID) => {return parties.hasOwnProperty(hostID) ? parties[hostID] : null}
 };

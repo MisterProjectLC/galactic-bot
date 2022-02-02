@@ -7,6 +7,7 @@ const rewards = require('../systems/rewards');
 const {removeReactions} = require('../utils/removeReactions');
 const {deleteMessage} = require('../utils/deleteMessage');
 const {shuffleArray} = require('../utils/shuffleArray');
+const {isValid} = require('../systems/autoDeleter');
 
 var tournaments = {};
 
@@ -242,6 +243,6 @@ module.exports = {
 
         saved_messages.add_message('prepareTournament', msg.id, pkg);
     },
-    permission: (msg) => true,
+    permission: async (msg) => await isValid(msg, module.exports.name),
     findTournamentMessage: (hostID) => {return tournaments.hasOwnProperty(hostID) ? tournaments[hostID] : null}
 };

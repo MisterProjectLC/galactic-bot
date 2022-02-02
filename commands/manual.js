@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -35,5 +36,5 @@ module.exports = {
 
         msg.reply({embeds: [embed]});
     }, 
-    permission: (msg) => true
+    permission: async (msg) => await isValid(msg, module.exports.name)
 };

@@ -3,6 +3,7 @@ const { codeBlock } = require('@discordjs/builders');
 const saved_messages = require('../utils/saved_messages');
 const fixedMessage = require('../utils/fixedMessage');
 const {removeReactions} = require('../utils/removeReactions');
+const {isValid} = require('../systems/autoDeleter');
 
 const LINES_PER_PAGE = 10;
 
@@ -100,7 +101,8 @@ module.exports = {
         fixedMessage.updateFixedMessage(oldMsgExists, table, 'leaderboard');
 
         saved_messages.add_message('leaderboardsPageTurn', table.id, {callerID: msg.author.id, page: 0, maxPages: maxPages, rows: rows});
-        m.delete();
+        m.delete().catch(err => console.log(err));
+        msg.delete().catch(err => console.log(err));
     }, 
 
     reaction: async (reaction, user, added) => {
@@ -129,5 +131,5 @@ module.exports = {
             saved_messages.add_message('leaderboardsPageTurn', msg.id, pkg);
         }
     },
-    permission: (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
+    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder") && await isValid(msg, module.exports.name)
 };

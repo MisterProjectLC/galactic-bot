@@ -1,6 +1,7 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
 const rewards = require('../systems/rewards');
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -28,5 +29,5 @@ module.exports = {
         db.makeQuery(`UPDATE players SET title = $2, imageURL = $3, next_weekly = $4 WHERE userid = $1`, 
         [msg.author.id, msg.member.displayName, msg.author.avatarURL(), time]);
     }, 
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

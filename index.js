@@ -31,6 +31,7 @@ const checkCooldown = require('./utils/cooldownControl').checkCooldown;
 const errors = require('./data/errors.js');
 const {initializePeriodic} = require('./systems/periodicFunctions');
 const { delay } = require('./utils/delay');
+const {autoDeleter} = require('./systems/autoDeleter');
 
 // Comandos
 const prefixes = config.prefixes;
@@ -67,11 +68,16 @@ Client.on("messageCreate", async msg => {
             break;
         }
     
-    if (prefix === "")
+    if (prefix === "") {
+        autoDeleter(msg);
         return;
+    }
 
     if (msg.content.length > 2000) {
         msg.reply(errors.longMessage);
+        await delay(1000*5);
+        msg.delete().catch(err => console.log(err));
+        m.delete().catch(err => console.log(err));
         return;
     }
 
@@ -88,8 +94,10 @@ Client.on("messageCreate", async msg => {
             return;
         
         found = true;
-        if (!(checkArgs(command, args, msg) && checkCooldown(command, msg)))
+        if (!((await checkArgs(command, args, msg)) && await checkCooldown(command, msg))) {
+            msg.delete().catch(err => console.log(err));
             return;
+        }
 
         command.execute(args.slice(1), msg, quoted_list, Client);
     })
@@ -99,6 +107,7 @@ Client.on("messageCreate", async msg => {
 
     let m = await msg.reply(errors.unidentifiedCommand);
     await delay(1000*5);
+    msg.delete().catch(err => console.log(err));
     m.delete().catch(err => console.log(err));
 });
 

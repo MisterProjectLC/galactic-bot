@@ -129,5 +129,5 @@ module.exports = {
             saved_messages.add_message('leaderboardsPageTurn', msg.id, pkg);
         }
     },
-    permission: (msg) => true
+    permission: (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
 };

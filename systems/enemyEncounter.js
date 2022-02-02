@@ -22,7 +22,7 @@ var cleanup = (pkg, name) => {
     }
 }
 
-var generateEnemyEmbed = (title, maxEnemies,  enemyInfos, enemyInfosInGame) => {
+var generateEnemyEmbed = (title, maxEnemies, enemyInfos, enemyInfosInGame) => {
     // Embed
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
@@ -45,14 +45,17 @@ var generateEnemyEmbed = (title, maxEnemies,  enemyInfos, enemyInfosInGame) => {
 }
 
 
-var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, maxEnemies = 1) => {
+var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, maxEnemies = 1, initialEnemies = 1) => {
     // Players + Create weapons/armor messages
     let players = await generatePlayerInfos(playerIDs, msg);
 
     // Enemies
-    let r = randomInt(enemyInfos.length);
-    let enemyInfosInGame = [enemyInfos[r]];
-    enemyInfos.splice(r, 1);
+    let enemyInfosInGame = [];
+    for (let i = 0; i < initialEnemies; i++) {
+        let r = randomInt(enemyInfos.length);
+        enemyInfosInGame.push(enemyInfos[r]);
+        enemyInfos.splice(r, 1);
+    }
 
     // Create summary message
     let erred = false;

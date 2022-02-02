@@ -6,6 +6,7 @@ const compareTwoStrings = require('string-similarity').compareTwoStrings;
 const saved_messages = require('../utils/saved_messages');
 const party = require('./party');
 const constants = require('../data/constants');
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -85,12 +86,12 @@ module.exports = {
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesConquests ON eEnemies.id = enemiesConquests.enemy_id 
         WHERE enemiesConquests.conquest_id = $1`, [bestMatch.id]);
 
-        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, partyMembers, result.rows);
+        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, partyMembers, result.rows, true);
     },
 
     reaction: async (reaction, user, added) => {
         encounter.onReaction(reaction, user, added, module.exports);
     },
 
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

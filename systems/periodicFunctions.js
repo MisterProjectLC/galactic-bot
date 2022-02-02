@@ -79,7 +79,7 @@ var rotatingShop = async () => {
         // Edit old shop messages
         Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
             guild.fetch().then(async guild => {
-                let oldShopResult = await db.makeQuery(`SELECT * FROM shopMessage WHERE guild_id = $1`, [guild.id]);
+                let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'shop'`, [guild.id]);
                 if (oldShopResult.rowCount >= 1) {
                     let oldMsg = oldShopResult.rows[0];
 
@@ -98,6 +98,31 @@ var rotatingShop = async () => {
         }))
     });
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
+}
+
+var updateLeaderboard = () => {
+    // Edit old leaderboard messages
+    Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
+        guild.fetch().then(async guild => {
+            let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'leaderboard'`, [guild.id]);
+            if (oldShopResult.rowCount >= 1) {
+                let oldMsg = oldShopResult.rows[0];
+
+                weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
+                armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
+                weapons = (await weapons).rows;
+                armors = (await armors).rows;
+
+                guild.channels.fetch(oldMsg.channel_id).then(channel => {
+                    channel.messages.fetch(oldMsg.message_id).then(message => {
+                        message.edit(showShop(weapons, armors)).catch(err => console.log(err));
+                    });
+                });
+            }
+        });
+    }))
+
+    setTimeout(updateLeaderboard, 30 * 60 * 1000);
 }
 
 
@@ -156,6 +181,7 @@ var initializePeriodic = async (client) => {
     setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
     setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
+    setTimeout(updateLeaderboard, 30 * 60 * 1000);
     setTimeout(spaceClubUpdate, 1000);
 }
 

@@ -1,5 +1,6 @@
 const timeFormatter = require('../utils/timeFormatter').timeFormatter;
 const Discord = require('discord.js');
+const {isValid} = require('../systems/autoDeleter');
 
 helpFormatting = (command) => {
     let embedResponse = new Discord.MessageEmbed()
@@ -84,6 +85,6 @@ module.exports = {
         else
             msg.reply({embeds: [helpFormatting(requested_command)] });
     }, 
-    permission: (msg) => true,
+    permission:  async (msg) => await isValid(msg, module.exports.name),
     helpFormatting: helpFormatting
 };

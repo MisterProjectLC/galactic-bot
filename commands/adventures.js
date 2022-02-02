@@ -1,6 +1,7 @@
 const db = require('../external/database.js');
 const Discord = require('discord.js');
 const asyncForEach = require('../utils/asyncForEach').asyncForEach;
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -34,5 +35,5 @@ module.exports = {
             msg.reply({embeds: [embed]});
         });
     }, 
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

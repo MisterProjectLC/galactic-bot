@@ -5,6 +5,17 @@ const errors = require('../data/errors');
 const { delay } = require('../utils/delay.js');
 const {deleteMessage} = require('../utils/deleteMessage');
 const fixedMessage = require('../utils/fixedMessage');
+const {updateIDs} = require('../systems/autoDeleter');
+const {isValid} = require('../systems/autoDeleter');
+
+
+var error = async (msg, errorText, waitTime = 5) => {
+    let m = await msg.reply(errorText);
+    await delay(1000*waitTime);
+    msg.delete().catch();
+    m.delete().catch();
+} 
+
 
 var showShop = (weapons, armors)  => {
     let weaponTuples = [];
@@ -74,29 +85,6 @@ var showShop = (weapons, armors)  => {
 }
 
 
-/*var showShop = async (weapons, armors, channel) => {
-    let embed = new Discord.MessageEmbed()
-    .setColor(0x1d51cc)
-    .setTitle("The Shop")
-    .setDescription("*To read more information about an item, use #check <number>*");
-
-    let total_i = 1;
-    let text = '';
-    for (let i = 0; i < weapons.length; i++, total_i++) {
-        text += `**${total_i}. ${weapons[i].title}** ${weapons[i].cost_per_level}:coin: - **[Lvl ${weapons[i].min_level}]**\n`;
-    }
-    embed = embed.addField(`WEAPONS`, text, false);
-
-    text = '';
-    for (let i = 0; i < armors.length; i++, total_i++) {
-        text += `**${total_i}. ${armors[i].title}** ${armors[i].cost_per_level}:coin: - **[Lvl ${armors[i].min_level}]**\n`;
-    }
-    embed = embed.addField(`ARMORS`, text, false);
-
-    channel.send(embed);
-}*/
-
-
 var checkShop = async (com_args, msg) => {
     let m = await msg.reply("Loading...");
 
@@ -112,7 +100,9 @@ var checkShop = async (com_args, msg) => {
     // Send new message
     let shopMsg = await msg.channel.send(showShop(weapons, armors));
     fixedMessage.updateFixedMessage(oldMsgExists, shopMsg, 'shop');
+    updateIDs();
 
+    msg.delete().catch(err => console.log("Couldn't delete the message " + err));
     m.delete().catch(err => console.log("Couldn't delete the message " + err));
 }
 
@@ -122,7 +112,7 @@ var buyFromShop = async (com_args, msg) => {
     // Get shop index
     let shopIndex = parseInt(com_args[0]);
     if (shopIndex !== shopIndex) {
-        msg.reply(errors.helpFormatting(module.exports));
+        error(msg, errors.helpFormatting(module.exports), 10);
         return;
     }
     shopIndex -= 1;
@@ -132,7 +122,7 @@ var buyFromShop = async (com_args, msg) => {
     if (com_args.length > 1) {
         let p = parseInt(com_args[1]);
         if (p !== p) {
-            msg.reply(errors.helpFormatting(module.exports));
+            error(msg, errors.helpFormatting(module.exports), 10);
             return;
         }
         purchaseAmount = p;
@@ -154,7 +144,7 @@ var buyFromShop = async (com_args, msg) => {
     armors = (await armorResult).rows;
 
     if (shopIndex >= weapons.length + armors.length || shopIndex < 0 || purchaseAmount <= 0) {
-        msg.reply(errors.invalidArgs);
+        error(msg, errors.helpFormatting(module.exports));
         return;
     }
 
@@ -163,24 +153,24 @@ var buyFromShop = async (com_args, msg) => {
     let coins = 0;
 
     if ((item.level != null ? item.level : 0) + purchaseAmount > 100) {
-        msg.reply("Items can't go over Level 100!");
+        error(msg, "Items can't go over Level 100!");
         return;
     }
 
     result = await db.makeQuery(`SELECT coins, level FROM players WHERE userid = $1`, [msg.author.id]);
     if (result.rowCount < 1) {
-        msg.reply(errors.unregisteredPlayer);
+        error(msg, errors.unregisteredPlayer);
         return;
     }
 
     if (result.rows[0].level < item.min_level) {
-        msg.reply("Your level is not high enough for this item...");
+        error(msg, "Your level is not high enough for this item...");
         return;
     }
 
     coins = result.rows[0].coins;
     if (coins < cost*purchaseAmount) {
-        msg.reply("You don't have enough coins for this item...");
+        error(msg, "You don't have enough coins for this item...");
         return;
     }
     
@@ -189,11 +179,11 @@ var buyFromShop = async (com_args, msg) => {
     m.react('❌');
     saved_messages.add_message('confirmPurchase', m.id, {item: item, purchaseAmount: purchaseAmount, msg: msg, isWeapon: (shopIndex < weapons.length)});
 
+    // Cleanup
     await delay(1000*120);
-    if (saved_messages.get_message('confirmPurchase', m.id) != null) {
-        msg.delete().catch(err => console.log(err));
+    msg.delete().catch(err => console.log(err));
+    if (saved_messages.get_message('confirmPurchase', m.id) != null)
         deleteMessage(m, 'confirmPurchase');
-    }
     
 }
 
@@ -254,5 +244,5 @@ module.exports = {
         }
 
     },
-    permission: (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
+    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder") && isValid(msg, module.exports.name)
 };

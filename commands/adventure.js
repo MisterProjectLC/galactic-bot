@@ -4,6 +4,7 @@ const encounter = require('../systems/enemyEncounter');
 const cooldownControl = require('../utils/cooldownControl');
 const constants = require('../data/constants');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -29,7 +30,7 @@ module.exports = {
                     bestMatch = row;
                     bestScore = score;
                 }
-            });            
+            });
         });
 
         m.delete();
@@ -65,7 +66,7 @@ module.exports = {
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
         WHERE enemiesAdventures.adventure_id = $1`, [bestMatch.id]);
 
-        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, [msg.author.id], result.rows, 3);
+        encounter.generateEnemyEncounter(bestMatch.title, msg, module.exports, [msg.author.id], result.rows, true, 3);
     },
 
     reaction: async (reaction, user, added) => {
@@ -76,5 +77,5 @@ module.exports = {
         encounter.onInteraction(interaction, module.exports);
     },
 
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

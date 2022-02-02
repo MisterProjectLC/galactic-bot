@@ -96,5 +96,5 @@ module.exports = {
         msg.channel.send(`<@${pkg.giftedID}>, ${text}`);
         rewards.giveCoins(user.id, pkg.coins, msg.channel, module.exports);
     },
-    permission: (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
+    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
 };

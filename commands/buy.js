@@ -1,4 +1,5 @@
 const shop = require('./shop');
+const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -15,5 +16,5 @@ module.exports = {
     reaction: async (reaction, user) => {
         shop.reaction(reaction, user);
     },
-    permission: (msg) => true
+    permission:  async (msg) => await isValid(msg, module.exports.name)
 };

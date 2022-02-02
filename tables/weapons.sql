@@ -19,6 +19,8 @@ create_weapon_effect('title', dmg, rate, 'effect_title', level, cost);
 
 SELECT create_armor('Shield Armor', 0, 8, 0, 0, 0, 0, 50);
 
+----
+
 SELECT create_weapon_effect('Plasma Sword', 3, 2, 'plasma', 10, 75);
 SELECT create_weapon_effect('Plasma Gun', 6, 1, 'plasma', 10, 75);
 SELECT create_weapon_effect('Plasma Cannon', 15, 0.5, 'plasma', 10, 75);
@@ -40,7 +42,7 @@ SELECT create_weapon_effect('The Shocker', 12, 1, 'shock', 30, 125);
 SELECT create_weapon_effect('Ice Cannon', 30, 0.5, 'freeze', 30, 125);
 SELECT create_weapon_effect('Tesla Cannon', 30, 0.5, 'shock', 30, 125);
 
-SELECT create_armor('Plasma Shield', 0, 32, 0, 0, 0, 30, 125);
+SELECT create_armor('Shield Mk II', 0, 32, 0, 0, 0, 30, 125);
 SELECT create_armor('Scale Skin', 16, 0, 0, 0, 0, 30, 125);
 SELECT create_armor('Platinum', 0, 0, 2, 0, 0, 30, 125);
 
@@ -75,7 +77,7 @@ SELECT create_weapon_effect('Void Cannon', 100, 0.5, 'void', 70, 300);
 SELECT create_weapon_effect('Cryolauncher', 100, 0.5, 'freeze', 70, 300);
 SELECT create_weapon_effect('Stormshot', 40, 1, 'shock', 70, 300);
 
-SELECT create_armor('Plasma Shield', 0, 96, 0, 0, 0, 70, 300);
+SELECT create_armor('Shield Mk III', 0, 96, 0, 0, 0, 70, 300);
 SELECT create_armor('Mutant Serum', 48, 0, 0, 0, 0, 70, 300);
 SELECT create_armor('Titanium', 0, 0, 6, 0, 0, 70, 300);
 

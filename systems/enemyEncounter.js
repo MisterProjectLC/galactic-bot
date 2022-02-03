@@ -41,7 +41,8 @@ var generateEnemyEmbed = (title, maxEnemies, cancellable, enemyInfos, enemyInfos
     enemyInfosInGame.forEach(enemy => {
         embed = embed.addField(`**${enemy.title}**`, `HP: ${enemy.health}\nShields: ${enemy.shield}\nPlate: ${enemy.plate}
         Regen: ${enemy.regen}\nEvasion: ${enemy.evasion}\nDamage: ${enemy.damage_per_level*enemy.weapon_level}
-        Attack Rate: ${enemy.rate} per turn\nEffect: ${enemy.effect_title != null ? capitalize(enemy.effect_title) : "None"}`, false);
+        Attack Rate: ${enemy.rate} per turn\nEffect: ${enemy.effect_title != null ? capitalize(enemy.effect_title) : "None"}`, 
+            enemyInfosInGame.length > 3);
     });
 
     return embed;
@@ -65,8 +66,10 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
     let mainMsg = await msg.channel.send({embeds: [generateEnemyEmbed(title, maxEnemies, cancellable, enemyInfos, enemyInfosInGame)]});
 
     mainMsg.react('✅').catch(err => console.log(err));
-    mainMsg.react('❌').catch(err => console.log(err));
-    if (maxEnemies > 1 && enemyInfos.length >= 1)
+    if (cancellable)
+        mainMsg.react('❌').catch(err => console.log(err));
+
+    if (maxEnemies > enemyInfosInGame.length && enemyInfos.length >= 1)
         mainMsg.react('🆙').catch(err => console.log(err));
 
     // Register messages
@@ -127,6 +130,7 @@ var updateEncounter = async (reaction, user, pkg, added, command) => {
         return;
     
     let confirmed = true;
+    console.log(pkg.players);
     pkg.players.forEach(player => {
         if (user.id == player.info.userid)
             player.confirmed = added;

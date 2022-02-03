@@ -7,9 +7,6 @@ const Discord = require('discord.js');
 
 const BATTLE_SIZE = 1;
 
-var attacks = [];
-
-
 var createPartyEmbed = async (members, unorderedRows, partySize, minLevel) => {
     let titles = [];
     members.forEach(member => {
@@ -72,18 +69,14 @@ module.exports = {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();
 
-        console.log("emoji");
+        encounter.onReaction(reaction, user, added, module.exports);
 
         let pkg = saved_messages.get_message('defenseParty', msg.id);
         if (!pkg)
             return;
 
-        console.log("pkg");
-
         if (emoji !== '✅')
             return;
-
-        console.log("return");
                    
         // Modify
         if (added) {
@@ -96,18 +89,16 @@ module.exports = {
         else
             return;
 
-        console.log("Modify");
-
-        // Get titles
-        let result = await db.makeQuery('SELECT title, userid FROM players WHERE userid = ANY($1)', [pkg.members]);
-
         // Start battle
         if (pkg.members.length == BATTLE_SIZE) {
             deleteMessage(msg, 'defenseParty');
             let result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
             WHERE enemiesAdventures.adventure_id = $1`, [pkg.adventure.id]);
+            let enemyList = [];
+            for (let i = 0; i < 4; i++)
+                result.rows.forEach(row => enemyList.push(row));
             await encounter.generateEnemyEncounter(pkg.adventure.title.substring(0, pkg.adventure.title.length-10) + " Invasion", msg, 
-                module.exports, pkg.members, result.rows, false, BATTLE_SIZE);
+                module.exports, pkg.members, enemyList, false, 12, 12);
         }
         
         // Update
@@ -118,5 +109,8 @@ module.exports = {
             saved_messages.add_message('defenseParty', msg.id, pkg);
         }
     },
-    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
+    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder"),
+    interaction: (interaction) => {
+        encounter.onInteraction(interaction, module.exports);
+    },
 };

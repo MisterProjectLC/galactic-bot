@@ -61,8 +61,16 @@ module.exports = {
             m.react('✅');
             saved_messages.add_message('defenseParty', m.id, {members: [], msg: m, adventure: adventureList[i]});
 
-            await delay(1000 * 60 * 4);
+            await delay(1000 * 60);
+            deleteMessage(m, 'defenseParty');
         }
+
+
+        let endingEmbed = new Discord.MessageEmbed()
+        .setColor(0x1d51cc)
+        .setTitle(`The invasion is over!`)
+        .setDescription(`The breach has been closed! Thanks to all who helped defend it!`);
+        await msg.channel.send({embeds: [endingEmbed]});
     },
 
     reaction: async (reaction, user, added) => {

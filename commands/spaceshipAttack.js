@@ -5,7 +5,7 @@ const {delay} = require('../utils/delay');
 const {deleteMessage} = require('../utils/deleteMessage');
 const Discord = require('discord.js');
 
-const BATTLE_SIZE = 1;
+const BATTLE_SIZE = 12;
 
 var attacks = [];
 

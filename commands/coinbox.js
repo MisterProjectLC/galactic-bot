@@ -24,12 +24,12 @@ function getUserIDFromMention(mention) {
 
 // Exports
 module.exports = {
-    name: "giftpack",
+    name: "coinbox",
     nicknames: ["gift"],
     category: "Rewards",
-    description: "Admin only. Gifts a pack to a player.",
-    examples: ["#gift @User: gift a pack to the mentioned user."],
-    min: 1, max: 1, cooldown: 10,
+    description: "Admin only. Gifts a pack of coins to a player.",
+    examples: ["#coinbox @User: gift a pack of coins to the mentioned user."],
+    min: 1, max: 1, cooldown: 0,
     execute: async (com_args, msg) => {
         let giftedID = getUserIDFromMention(com_args[0]);
         if (giftedID === null) {
@@ -50,7 +50,7 @@ module.exports = {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
         .setTitle(`${gifted.title}, you received a pack!`)
-        .setDescription(`Contents:\n4-8 Levels of 3 random Items\n${coins} coins`)
+        .setDescription(`Contents:\n${coins} coins`)
         .setFooter("Press 🎁 to open");
 
         // Create summary message
@@ -68,32 +68,6 @@ module.exports = {
             return;
 
         deleteMessage(msg, 'packOpen');
-            
-        let itemLevel = Math.max(1, 10+ Math.floor((pkg.gifted.level- 10)/20)*20);
-        console.log(itemLevel);
-        let weapons = db.makeQuery(`SELECT * FROM weapons WHERE min_level = $1 AND enemy_weapon = false`, [itemLevel]); 
-        let armors = db.makeQuery(`SELECT * FROM armors WHERE min_level = $1`, [itemLevel]);
-        weapons = (await weapons).rows;
-        armors = (await armors).rows;
-
-        let text = "";
-        for (let i = 0; i < COUNT_ITEMS; i++) {
-            let rand = Math.floor(Math.random()*(weapons.length+armors.length));
-
-            let amount = 4+Math.floor(Math.random()*4);
-            let title = rand < weapons.length ? weapons[rand].title : armors[rand-weapons.length].title;
-            if (rand < weapons.length) {
-                weapons.splice(rand, 1);
-                db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [user.id, title, amount]);
-            } else {
-                armors.splice(rand-weapons.length, 1);
-                db.makeQuery(`SELECT buy_armor($1, $2, $3)`, [user.id, title, amount]);
-            }
-
-            text += `You received **${amount} Levels** of **${title}**!\n`;
-        }
-
-        msg.channel.send(`<@${pkg.giftedID}>, ${text}`);
         rewards.giveCoins(user.id, pkg.coins, msg.channel, module.exports);
     },
     permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")

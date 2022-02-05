@@ -89,7 +89,7 @@ var checkShop = async (com_args, msg) => {
     let m = await msg.reply("Loading...");
 
     // Delete old shop message
-    let oldMsgExists = fixedMessage.deleteOldMessage(msg, 'shop');
+    let oldMsgExists = await fixedMessage.deleteOldMessage(msg, 'shop');
 
     // Obtain product list
     let weaponResult = db.makeQuery(`SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title`);
@@ -188,6 +188,52 @@ var buyFromShop = async (com_args, msg) => {
 }
 
 
+var acquireFromShop = async (shopIndex, purchaseAmount, userid, msg) => {
+    // Check if item exists
+    let weaponResult = db.makeQuery(`SELECT weapons.title, cost_per_level, level, min_level
+    FROM weapons LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
+    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, weapons.title`, [userid]);
+    let armorResult = db.makeQuery(`SELECT title, cost_per_level, level, min_level
+    FROM armors LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
+    (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, armors.title`, [userid]);
+    let weapons = (await weaponResult).rows;
+    let armors = (await armorResult).rows;
+
+    if (shopIndex >= weapons.length + armors.length || shopIndex < 0 || purchaseAmount <= 0) {
+        error(msg, errors.helpFormatting(module.exports));
+        return;
+    }
+
+    // Check item
+    let item = (shopIndex < weapons.length ? weapons[shopIndex] : armors[shopIndex-weapons.length]);
+    if ((item.level != null ? item.level : 0) + purchaseAmount > 100) {
+        error(msg, "Items can't go over Level 100!");
+        return;
+    }
+
+    // Check player
+    result = await db.makeQuery(`SELECT title, level FROM players WHERE userid = $1`, [userid]);
+    if (result.rowCount < 1) {
+        error(msg, errors.unregisteredPlayer);
+        return;
+    }
+    if (result.rows[0].level < item.min_level) {
+        error(msg, "Their level is not high enough for this item...");
+        return;
+    }
+
+    // Purchase item
+    if (shopIndex < weapons.length) {
+        db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [userid, item.title, purchaseAmount]);
+        console.log("Weapon bought!");
+    } else {
+        db.makeQuery(`SELECT buy_armor($1, $2, $3)`, [userid, item.title, purchaseAmount]);
+        console.log("Armor bought!");
+    }
+    msg.channel.send(`${purchaseAmount} Level(s) of ${item.title} added to ${result.rows[0].title}.`);
+}
+
+
 // Exports
 module.exports = {
     name: "shop",
@@ -205,6 +251,7 @@ module.exports = {
         }
     },
     buyFromShop: buyFromShop,
+    acquireFromShop: acquireFromShop,
     showShop: showShop,
 
     reaction: async (reaction, user) => {

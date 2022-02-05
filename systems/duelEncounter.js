@@ -134,7 +134,7 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     let rightInstances = generatePlayers(pkg.rightPlayers);
 
     // Battle
-    let endgame = await generateBattle(leftInstances, rightInstances, msg, true, true);
+    let endgame = await generateBattle(true, leftInstances, rightInstances, msg, true, true);
 
     console.log('FIM');
     await pkg.outsideFunction(endgame, pkg.outsidePkg);

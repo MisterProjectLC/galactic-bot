@@ -186,8 +186,8 @@ module.exports = {
             ]);
     },
     
-    generateBattle: async (combatantsA, combatantsB, msg, leftArePlayers = true, rightArePlayers = false) => {
-        return await new battle.Battle(msg.channel, combatantsA, combatantsB, leftArePlayers, rightArePlayers).battle();
+    generateBattle: async (isDuel, combatantsA, combatantsB, msg, leftArePlayers = true, rightArePlayers = false) => {
+        return await new battle.Battle(msg.channel, isDuel, combatantsA, combatantsB, leftArePlayers, rightArePlayers).battle();
     },
 
     updateInventory: (interaction, playerRef) => {

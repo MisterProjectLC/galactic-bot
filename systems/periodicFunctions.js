@@ -4,8 +4,33 @@ const constants = require('../data/constants');
 const rewards = require('../systems/rewards');
 const {asyncForEach} = require('../utils/asyncForEach');
 const {showShop} = require('../commands/shop');
+const leaderboard = require('../commands/leaderboard');
+const saved_messages = require('../utils/saved_messages');
 
 var Client;
+
+var fetchMembers = async () => {
+    let memberList = [];
+
+    let guilds = await Client.guilds.fetch().catch(console.error);
+    let guildArray = [];
+    guilds.forEach((value, key) => {
+        guildArray.push(value);
+    })
+
+    await asyncForEach(guildArray, async guild => {
+        guild = await guild.fetch().catch(console.error);
+        
+        let members = await guild.members.fetch().catch(console.error);
+        members.forEach(member => {
+            if (!memberList.includes(member))
+                memberList.push(member);
+        });
+    });
+
+    return memberList;
+}
+
 
 var refresh = (name, callback) => {
     console.log("Try Refresh " + name);
@@ -24,6 +49,25 @@ var refresh = (name, callback) => {
 
 var refreshAdventures = () => {
     refresh('adventures', async () => {
+        let rows = (await db.makeQuery(`SELECT userid FROM players WHERE adventures_left = 0`)).rows;
+        let memberList = await fetchMembers();
+
+        rows.forEach(row => {
+            let member = memberList.find(member => {return member.user.id == row.userid});
+            console.log("test");
+            if (member != undefined)
+                member.user.send(`You have just recharged an adventure!`);
+        });
+
+        rows = (await db.makeQuery(`SELECT userid FROM players WHERE adventures_left = $1`, [constants.adventuresMax-1])).rows;
+
+        rows.forEach(row => {
+            let member = memberList.find(member => {return member.user.id == row.userid});
+            console.log("test");
+            if (member != undefined)
+                member.user.send(`You have just recharged all of your adventures!`);
+        });
+        
         db.makeQuery(`UPDATE players SET adventures_left = adventures_left + 1 WHERE adventures_left < $1`, [constants.adventuresMax]);
     });
     setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
@@ -100,55 +144,40 @@ var rotatingShop = async () => {
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
 }
 
-var updateLeaderboard = () => {
+var updateLeaderboard = async () => {
     // Edit old leaderboard messages
-    Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
-        guild.fetch().then(async guild => {
-            let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'leaderboard'`, [guild.id]);
-            if (oldShopResult.rowCount >= 1) {
-                let oldMsg = oldShopResult.rows[0];
+    let guilds = await Client.guilds.fetch().catch(err => console.log(err));
+    let guildArray = [];
+    guilds.forEach((value, key) => {
+        guildArray.push(value);
+    })
 
-                weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
-                armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
-                weapons = (await weapons).rows;
-                armors = (await armors).rows;
+    await asyncForEach(guildArray, async guild => {
+        guild = await guild.fetch().catch(err => console.log(err));
+        
+        let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'leaderboard'`, [guild.id]);
+        if (oldShopResult.rowCount < 1)
+            return;
+        let oldMsg = oldShopResult.rows[0];
 
-                guild.channels.fetch(oldMsg.channel_id).then(channel => {
-                    channel.messages.fetch(oldMsg.message_id).then(message => {
-                        message.edit(showShop(weapons, armors)).catch(err => console.log(err));
-                    });
-                });
-            }
-        });
-    }))
+        let channel = await guild.channels.fetch(oldMsg.channel_id);
+        let message = await channel.messages.fetch(oldMsg.message_id);
+        let pkg = await leaderboard.fetchLeaderboard();
+        saved_messages.add_message('leaderboardsPageTurn', message.id, pkg);
+        message.edit(await leaderboard.generatePage(pkg.rows.slice(0, leaderboard.LINES_PER_PAGE), 0, pkg.maxPages)).catch(err => console.log(err));
+    });
 
-    setTimeout(updateLeaderboard, 30 * 60 * 1000);
+    setTimeout(updateLeaderboard, 3 * 60 * 1000);
 }
 
 
 var spaceClubUpdate = async () => {
-    console.log("spaceClubUpdate");
-    let memberList = [];
-
-    await Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
-        guild.fetch().then(guild => {
-            if (!guild.available)
-                return;
-            guild.members.fetch().then(members => members.forEach(member => {
-            if (!memberList.includes(member))
-                memberList.push(member);
-            }))
-        })
-    })).catch(console.error);
-
-    //console.log(memberList);
+    let memberList = await fetchMembers();
 
     let newClubList = [];
     let kickList = [];
 
     let nonMembers = (await db.makeQuery('SELECT userid FROM players WHERE spaceClub = false')).rows;
-    //console.log('nonMembers');
-    //console.log(nonMembers);
 
     await asyncForEach(memberList, async member => {
         if (member.roles.cache.some(role => role.name == "SpaceClub") && nonMembers.some(row => row.userid == member.user.id)
@@ -160,11 +189,6 @@ var spaceClubUpdate = async () => {
                 && !kickList.includes(member.user.id))
             kickList.push(member.user.id);
     });
-
-    //console.log('newClubList');
-    //console.log(newClubList);
-    //console.log('kickList');
-    //console.log(kickList);
 
     db.makeQuery('UPDATE players SET spaceClub = true WHERE spaceClub = false AND userid = ANY($1)', [newClubList]);
     await db.makeQuery('UPDATE players SET spaceClub = false, level = GREATEST(1, level - 20) WHERE spaceClub = true AND userid = ANY($1)', [kickList]);
@@ -181,7 +205,7 @@ var initializePeriodic = async (client) => {
     setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
     setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
-    setTimeout(updateLeaderboard, 30 * 60 * 1000);
+    setTimeout(updateLeaderboard, 1000);
     setTimeout(spaceClubUpdate, 1000);
 }
 

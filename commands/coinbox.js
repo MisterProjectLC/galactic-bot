@@ -25,7 +25,6 @@ function getUserIDFromMention(mention) {
 // Exports
 module.exports = {
     name: "coinbox",
-    nicknames: ["gift"],
     category: "Rewards",
     description: "Admin only. Gifts a pack of coins to a player.",
     examples: ["#coinbox @User: gift a pack of coins to the mentioned user."],
@@ -57,17 +56,17 @@ module.exports = {
         let m = await msg.channel.send({embeds: [embed]});
         m.react('🎁');
 
-        saved_messages.add_message('packOpen', m.id, {giftedID: giftedID, coins: coins, gifted:gifted});
+        saved_messages.add_message('coinpackOpen', m.id, {giftedID: giftedID, coins: coins, gifted:gifted});
     },
     reaction: async (reaction, user, added) => {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();
 
-        let pkg = saved_messages.get_message('packOpen', msg.id);
+        let pkg = saved_messages.get_message('coinpackOpen', msg.id);
         if (!(pkg && (emoji === '🎁') && user.id === pkg.giftedID))
             return;
 
-        deleteMessage(msg, 'packOpen');
+        deleteMessage(msg, 'coinpackOpen');
         rewards.giveCoins(user.id, pkg.coins, msg.channel, module.exports);
     },
     permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")

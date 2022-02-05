@@ -95,18 +95,32 @@ module.exports = {
         let player_weapons = (await weapon_result).rows;
         let player_armors = (await armor_result).rows;
 
-        console.log(player_weapons.length);
-        console.log(player_armors.length);
-
+        
+        if (player_weapons.length > 0) {
         let weapon_msg = await buildListMessage(null, msg.channel, msg.author.id, "Weapon List", `${ITENS_PER_VIEWING} per page`, 
                                     player_weapons, buildWeaponLine, 0, ITENS_PER_VIEWING);
-        let armor_msg = await buildListMessage(null, msg.channel, msg.author.id, "Armor List", `${ITENS_PER_VIEWING} per page`, 
-                                    player_armors, buildArmorLine, 0, ITENS_PER_VIEWING);
-
         saved_messages.add_message('checkPageTurn', weapon_msg.id, {caller_id: msg.author.id,
-            weapon_info: {list: player_weapons, msg: weapon_msg, page: 0}});
-        saved_messages.add_message('checkPageTurn', armor_msg.id, {caller_id: msg.author.id,
-            armor_info: {list:player_armors, selected: [], msg: armor_msg, page: 0}});
+                                        weapon_info: {list: player_weapons, msg: weapon_msg, page: 0}});
+        } else {
+            let embed = new Discord.MessageEmbed()
+            .setColor(0x1d51cc)
+            .setTitle(`Weapon List`)
+            .setDescription(`You don't have any weapons! Go to the shop and get some!`);
+            msg.channel.send({ embeds: [embed] });
+        }
+        
+        if (player_armors.length > 0) {
+            let armor_msg = await buildListMessage(null, msg.channel, msg.author.id, "Armor List", `${ITENS_PER_VIEWING} per page`, 
+                                        player_armors, buildArmorLine, 0, ITENS_PER_VIEWING);
+            saved_messages.add_message('checkPageTurn', armor_msg.id, {caller_id: msg.author.id,
+                armor_info: {list:player_armors, selected: [], msg: armor_msg, page: 0}});
+        } else {
+            let embed = new Discord.MessageEmbed()
+            .setColor(0x1d51cc)
+            .setTitle(`Armor List`)
+            .setDescription(`You don't have any armors! Go to the shop and get some!`);
+            msg.channel.send({ embeds: [embed] });
+        }
     },
 
     permission: async (msg) => await isValid(msg, module.exports.name),

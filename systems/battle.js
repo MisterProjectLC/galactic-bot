@@ -31,7 +31,7 @@ module.exports.Battle = class {
     updateBattleStatus(fighter, side) {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle(duel ? `**${fighter.title}**` : `**${fighter.title} - Side ${side}**`)
+        .setTitle(this.duel ? `**${fighter.title}**` : `**${fighter.title} - Side ${side}**`)
         .setThumbnail(fighter.image);
 
         if (fighter.image != null)
@@ -169,7 +169,7 @@ module.exports.Battle = class {
             rightBattleStatus[i] = this.updateBattleStatus(this.rightFighters[i], 'B');
         
         if (leftBattleStatus.length + rightBattleStatus.length <= 10)
-            statusEmbedMsgs[0] = await this.channel.send({embeds: leftBattleStatus.concat(rightBattleStatus)});
+            await statusEmbedMsgs[0].edit({embeds: leftBattleStatus.concat(rightBattleStatus)});
         
         else {
             let j = 0;

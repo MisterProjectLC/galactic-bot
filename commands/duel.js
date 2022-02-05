@@ -95,8 +95,8 @@ module.exports = {
 
         // Create summary message
         let m = await msg.channel.send({embeds: [embed]});
-        m.react('✅');
-        m.react('❌');
+        m.react('✅').catch(err => console.log(err));
+        m.react('❌').catch(err => console.log(err));
 
         saved_messages.add_message('duelConfirmation', m.id, {msg: msg, confirmMsg: m, challengerID: msg.author.id, challengedID: challengedID, bet: bet});
     },

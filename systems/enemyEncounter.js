@@ -153,7 +153,7 @@ var updateEncounter = async (reaction, user, pkg, added, command) => {
         enemies[i] = generateEnemy(pkg.enemies[i]);
 
     // Battle
-    let endgame = await generateBattle(playerInstances, enemies, msg);
+    let endgame = await generateBattle(false, playerInstances, enemies, msg);
     if (endgame == 1) {
         let xpGained = pkg.enemies.reduce((previousValue, enemy) => {
             return previousValue += enemy.given_xp;

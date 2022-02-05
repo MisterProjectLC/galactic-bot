@@ -72,7 +72,7 @@ var giveLevels = async (userID, levels, channel, command) => {
         } else {
             threshold = xpThreshold(level);
             if (channel)
-                channel.send(`<@${userID}>, you have leveled up! You are now at **Level ${level}** and have **${newXP}XP**.`);
+                channel.send(`<@${userID}>, you have leveled up! You are now at **Level ${level}**.`);
         }
         
         await db.makeQuery(`UPDATE players SET level = $2 WHERE userid = $1`, [userID, level]);

@@ -25,7 +25,6 @@ function getUserIDFromMention(mention) {
 // Exports
 module.exports = {
     name: "spacebox",
-    nicknames: ["gift"],
     category: "Rewards",
     description: "Admin only. Gifts a pack of items and coins to a player.",
     examples: ["#spacebox @User: gift a pack of items and coins to the mentioned user."],

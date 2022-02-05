@@ -7,7 +7,7 @@ const {isValid} = require('../systems/autoDeleter');
 
 const LINES_PER_PAGE = 10;
 
-generatePage = async (rows, pageNumber, totalPages, userRank=null)  => {
+var generatePage = async (rows, pageNumber, totalPages, userRank=null)  => {
     let tuples = [];
 
     let rankHeader = ' 🎖️';
@@ -63,6 +63,31 @@ generatePage = async (rows, pageNumber, totalPages, userRank=null)  => {
     return codeBlock('js', message);
 }
 
+
+var fetchLeaderboard = async () => {
+    let achievers = db.makeQuery(`SELECT victory_time, title FROM players WHERE victory_time IS NOT NULL AND is_founder = false ORDER BY victory_time ASC`);
+    let players = db.makeQuery(`SELECT level, xp, title FROM players WHERE is_founder = false ORDER BY level DESC, xp DESC`);
+    achievers = (await achievers).rows;
+    players = (await players).rows;
+
+    if (achievers.length + players.length <= 0) {
+        return null;
+    }
+
+    let achieverCount = 0;
+    let rows = [];
+    for (let i = 0; i < achievers.length; i++, achieverCount++)
+        rows.push({title: achievers[i].title, level: 100, xp: 0});
+
+    for (let i = achieverCount; i < players.length; i++)
+        rows.push({title: players[i].title, level: players[i].level, xp: players[i].xp});
+
+    let maxPages = Math.ceil(rows.length/LINES_PER_PAGE);
+
+    return {page: 0, maxPages: maxPages, rows: rows};
+}
+
+
 // Exports
 module.exports = {
     name: "leaderboard",
@@ -71,6 +96,7 @@ module.exports = {
     description: "Check the leaderboards.", 
     min: 0, max: 0, cooldown: 10,
     execute: async (com_args, msg) => {
+        // Get data
         let achievers = db.makeQuery(`SELECT victory_time, title FROM players WHERE victory_time IS NOT NULL AND is_founder = false ORDER BY victory_time ASC`);
         let players = db.makeQuery(`SELECT level, xp, title FROM players WHERE is_founder = false ORDER BY level DESC, xp DESC`);
         achievers = (await achievers).rows;
@@ -93,14 +119,14 @@ module.exports = {
 
         let maxPages = Math.ceil(rows.length/LINES_PER_PAGE);
 
-        let oldMsgExists = fixedMessage.deleteOldMessage(msg, 'leaderboard');
+        let oldMsgExists = await fixedMessage.deleteOldMessage(msg, 'leaderboard');
 
         let table = await msg.channel.send(await generatePage(rows.slice(0, LINES_PER_PAGE), 0, maxPages));
         table.react("◀️");
         table.react("▶️");
         fixedMessage.updateFixedMessage(oldMsgExists, table, 'leaderboard');
 
-        saved_messages.add_message('leaderboardsPageTurn', table.id, {callerID: msg.author.id, page: 0, maxPages: maxPages, rows: rows});
+        saved_messages.add_message('leaderboardsPageTurn', table.id, {page: 0, maxPages: maxPages, rows: rows});
         m.delete().catch(err => console.log(err));
         msg.delete().catch(err => console.log(err));
     }, 
@@ -114,13 +140,10 @@ module.exports = {
 
         let pkg = saved_messages.get_message('leaderboardsPageTurn', msg.id);
         if (pkg) {
-            if (user.id != pkg.callerID)
-                return;
-
             if (emoji === "◀️" && pkg.page > 0)
                 pkg.page -= 1;
         
-            else if (emoji === "▶️" && pkg.page < pkg.maxPages)
+            else if (emoji === "▶️" && pkg.page < pkg.maxPages-1)
                 pkg.page += 1;
             
             removeReactions(msg, user.id);
@@ -131,5 +154,8 @@ module.exports = {
             saved_messages.add_message('leaderboardsPageTurn', msg.id, pkg);
         }
     },
-    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder") && await isValid(msg, module.exports.name)
+    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder") && await isValid(msg, module.exports.name),
+    generatePage: generatePage,
+    fetchLeaderboard: fetchLeaderboard,
+    LINES_PER_PAGE: LINES_PER_PAGE
 };

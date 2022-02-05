@@ -80,7 +80,7 @@ var confirmTournament = async (pkg) => {
 var createBoard = (duels, pkg) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
-    .setTitle(`${pkg.hostTitle}'s Tournament`);
+    .setTitle(`Space Club Tournament`);
 
     let duelList = '';
     for (let i = 0; i < duels.length; i++) {
@@ -95,10 +95,10 @@ var createBoard = (duels, pkg) => {
 }
 
 
-var createJoinEmbed = async (participants, entryFee, tournamentSize) => {   
+var createJoinEmbed = async (hostTitle, participants, entryFee, tournamentSize) => {   
     let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle(`${participants[0].title}'s Tournament`)
+        .setTitle(`Space Club Tournament`)
         .setDescription(`Entry Fee: ${entryFee} coins\nFinal Prize: ${entryFee*tournamentSize} coins`)
         .setFooter(`Host: Once the tournament is filled, press ✅ to start the tournament.
 Other users: Press 🔼 to join the tournament. 
@@ -162,26 +162,22 @@ module.exports = {
             msg.reply(errors.unregisteredPlayer);
             return;
         }
-        if (result.rows[0].coins < entryFee) {
-            msg.reply("You don't have enough coins for this entry fee...");
-            return;
-        }
 
         let participants = [];
-        let embed = await createJoinEmbed(participants, entryFee, tournamentSize);
+        let embed = await createJoinEmbed(result.rows[0].title, participants, entryFee, tournamentSize);
 
         let m = await msg.reply({embeds: [embed]});
         m.react('🔼');
 
         // Create tournament message
-        if (saved_messages.get_message('prepareTournamentUser', msg.author.id) != null) {
-            deleteMessage(saved_messages.get_message('prepareTournament', saved_messages.get_message('prepareTournamentUser', msg.author.id)).msg,
-            'prepareTournament');
-            saved_messages.remove_message('prepareTournamentUser');
+        if (saved_messages.get_message('prepareSCTournamentUser', msg.author.id) != null) {
+            deleteMessage(saved_messages.get_message('prepareSCTournament', saved_messages.get_message('prepareSCTournamentUser', msg.author.id)).msg,
+            'prepareSCTournament');
+            saved_messages.remove_message('prepareSCTournamentUser');
         }
         
-            saved_messages.add_message('prepareTournamentUser', msg.author.id, m.id);
-        saved_messages.add_message('prepareTournament', m.id, {hostID: msg.author.id, hostTitle: participants[0].title, participants: participants, 
+            saved_messages.add_message('prepareSCTournamentUser', msg.author.id, m.id);
+        saved_messages.add_message('prepareSCTournament', m.id, {hostID: msg.author.id, hostTitle: result.rows[0].title, participants: participants, 
             tournamentSize: tournamentSize, entryFee: entryFee, msg: m});
 
     }, 
@@ -190,7 +186,7 @@ module.exports = {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();
 
-        let pkg = saved_messages.get_message('prepareTournament', msg.id);
+        let pkg = saved_messages.get_message('prepareSCTournament', msg.id);
         if (!pkg)
             return;
 
@@ -223,20 +219,20 @@ module.exports = {
             let ids = pkg.participants.map(participant => {return participant.id});
             db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userID ILIKE ANY($1)`, [ids, pkg.entryFee]);
             confirmTournament(pkg);
-            deleteMessage(msg, 'prepareTournament');
-            saved_messages.remove_message('prepareTournamentUser', pkg.hostID);
+            deleteMessage(msg, 'prepareSCTournament');
+            saved_messages.remove_message('prepareSCTournamentUser', pkg.hostID);
             return;
         }
         
 
         // Update
-        msg.edit({embeds: [await createJoinEmbed(pkg.participants, pkg.entryFee, pkg.tournamentSize)]});
+        msg.edit({embeds: [await createJoinEmbed(pkg.hostTitle, pkg.participants, pkg.entryFee, pkg.tournamentSize)]});
         if (pkg.participants.length == pkg.tournamentSize)
             msg.react('✅');
         else if (pkg.msg.reactions.cache.has('✅'))
             pkg.msg.reactions.cache.get('✅').remove().catch(error => console.error('Failed to remove reactions: ', error));
 
-        saved_messages.add_message('prepareTournament', msg.id, pkg);
+        saved_messages.add_message('prepareSCTournament', msg.id, pkg);
     },
     permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder"),
     findTournamentMessage: (hostID) => {return tournaments.hasOwnProperty(hostID) ? tournaments[hostID] : null}

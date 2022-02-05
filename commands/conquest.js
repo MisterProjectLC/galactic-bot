@@ -92,6 +92,9 @@ module.exports = {
     reaction: async (reaction, user, added) => {
         encounter.onReaction(reaction, user, added, module.exports);
     },
+    interaction: (interaction) => {
+        encounter.onInteraction(interaction, module.exports);
+    },
 
     permission:  async (msg) => await isValid(msg, module.exports.name)
 };

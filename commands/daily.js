@@ -1,6 +1,7 @@
 const db = require('../external/database.js');
 const errors = require('../data/errors');
 const rewards = require('../systems/rewards');
+const cooldownControl = require('../utils/cooldownControl');
 const {isValid} = require('../systems/autoDeleter');
 
 // Exports
@@ -13,6 +14,7 @@ module.exports = {
         let result = await db.makeQuery(`SELECT next_daily FROM players WHERE userid = $1`, [msg.author.id]);
         if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             return;
         }
 

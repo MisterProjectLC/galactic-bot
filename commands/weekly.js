@@ -13,6 +13,7 @@ module.exports = {
         let result = await db.makeQuery(`SELECT next_weekly FROM players WHERE userid = $1`, [msg.author.id]);
         if (result.rowCount < 1) {
             msg.reply(errors.unregisteredPlayer);
+            cooldownControl.resetCooldown(module.exports, msg.author.id);
             return;
         }
 

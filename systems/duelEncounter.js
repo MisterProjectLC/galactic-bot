@@ -5,7 +5,7 @@ const { delay } = require('../utils/delay.js');
 const {generatePlayers, generatePlayerInfos, generateBattle, updateInventory} = require('./encounterHelper');
 const {deleteMessage} = require('../utils/deleteMessage');
 
-const LOADOUT_TIME = 10;
+const LOADOUT_TIME = 90;
 const TIME_INCREMENT = 5;
 
 var cleanup = (pkg) => {

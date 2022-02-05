@@ -16,7 +16,8 @@ module.exports.Weapon = Weapon;
 module.exports.Fighter = Fighter;
 module.exports.effects = effects;
 module.exports.Battle = class {
-    constructor(channel, leftFighters, rightFighters, leftArePlayers, rightArePlayers) {
+    constructor(channel, duel, leftFighters, rightFighters, leftArePlayers, rightArePlayers) {
+        this.duel = duel;
         this.leftFighters = leftFighters;
         this.rightFighters = rightFighters;
         this.leftArePlayers = leftArePlayers;
@@ -30,7 +31,7 @@ module.exports.Battle = class {
     updateBattleStatus(fighter, side) {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle(`**${fighter.title} - Side ${side}**`)
+        .setTitle(duel ? `**${fighter.title}**` : `**${fighter.title} - Side ${side}**`)
         .setThumbnail(fighter.image);
 
         if (fighter.image != null)

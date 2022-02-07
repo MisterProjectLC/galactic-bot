@@ -38,7 +38,7 @@ module.exports = {
     category: "Event",
     description: "Admin only. Begins a Spaceship Attack Event.", 
     details: ["This event lasts one day. Every 4 hours, a new wave appears, increasing in difficulty.",
-    "Waves consist of 16 players vs 16 enemies battles, and only start when all 16 slots are filled."],
+    "Waves consist of 12 players vs 12 enemies battles, and only start when all 12 slots are filled."],
     min: 0, max: 0, cooldown: 900,
     execute: async (com_args, msg) => {
         let adventureList = (await db.makeQuery(`SELECT * FROM adventures`)).rows;
@@ -61,7 +61,7 @@ module.exports = {
             m.react('✅');
             saved_messages.add_message('defenseParty', m.id, {members: [], msg: m, adventure: adventureList[i]});
 
-            await delay(1000 * 60);
+            await delay(1000 * 60 * 60 * 4);
             deleteMessage(m, 'defenseParty');
         }
 
@@ -106,7 +106,7 @@ module.exports = {
             for (let i = 0; i < 4; i++)
                 result.rows.forEach(row => enemyList.push(row));
             await encounter.generateEnemyEncounter(pkg.adventure.title.substring(0, pkg.adventure.title.length-10) + " Invasion", msg, 
-                module.exports, pkg.members, enemyList, false, 12, 12);
+                module.exports, pkg.members, enemyList, false, BATTLE_SIZE, BATTLE_SIZE);
         }
         
         // Update

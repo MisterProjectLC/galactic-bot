@@ -118,10 +118,10 @@ module.exports = {
     name: "spaceclubTournament",
     nicknames: ["spaceClubTournament", "SpaceClubTournament", "ClubTournament"],
     category: "Battle",
-    description: "Host a tournament between players.", 
+    description: "Admin only. Host a tournament between players.", 
     examples: ["#spaceclubTournament: create a tournament of 4 players.",
-    "#tournament 8: create a tournament of 8 players.",
-    "#tournament 4 50: create a tournament of 4 players with an entry fee of 50 coins and a prize of 200 coins (4x50)."],
+    "#spaceclubTournament 8: create a tournament of 8 players.",
+    "#spaceclubTournament 4 50: create a tournament of 4 players with an entry fee of 50 coins and a prize of 200 coins (4x50)."],
     details: ["Tournament sizes must be either 4, 8 or 16."],
     min: 0, max: 2, cooldown: 5,
     execute: async (com_args, msg) => {

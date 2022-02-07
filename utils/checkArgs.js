@@ -6,7 +6,7 @@ const checkArgs = async (command, args, msg) => {
     if (command.min && !(command.min < args.length)) {
         let m = msg.reply(errors.invalidArgs);
         await delay(1000*5);
-        m.delete().catch();
+        m.delete().catch(err => console.log(err));
         return false;
     }
 

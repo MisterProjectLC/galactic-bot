@@ -9,8 +9,8 @@ module.exports = {
     nicknames: ["removeItem"],
     category: "Control",
     description: "Admin only. Removes items from a player.", 
-    examples: ["#removeitem 10 @User: removes the 10th equipment in the shop to the mentioned user."],
-    min: 3, max: 3, cooldown: 0,
+    examples: ["#removeitem 10 @User: removes the 10th equipment in the shop from the mentioned user."],
+    min: 2, max: 2, cooldown: 0,
     execute: async (com_args, msg) => {
         // Item
         let itemIndex = parseInt(com_args[0]);
@@ -20,15 +20,8 @@ module.exports = {
         }
         itemIndex -= 1;
 
-        // Level
-        let level = parseInt(com_args[1]);
-        if (!(level === level && level > 0)) {
-            msg.reply(errors.invalidArgs);
-            return;
-        }
-
         // Gifted
-        let giftedID = getUserIDFromMention(com_args[2]);
+        let giftedID = getUserIDFromMention(com_args[1]);
         if (giftedID === null) {
             msg.reply("Couldn't find the mentioned player...");
             msg.reply(errors.helpFormatting(module.exports));
@@ -44,14 +37,14 @@ module.exports = {
         // Check if item exists
         let weaponResult = db.makeQuery(`SELECT weapons.title, cost_per_level, level, min_level
         FROM weapons LEFT OUTER JOIN playersWeapons ON weapons.id = playersWeapons.weapon_id AND player_id = 
-        (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, weapons.title`, [userid]);
+        (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, weapons.title`, [giftedID]);
         let armorResult = db.makeQuery(`SELECT title, cost_per_level, level, min_level
         FROM armors LEFT OUTER JOIN playersArmors ON armors.id = playersArmors.armor_id AND player_id = 
-        (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, armors.title`, [userid]);
+        (SELECT id FROM players WHERE userid = $1) WHERE in_shop = true ORDER BY cost_per_level, armors.title`, [giftedID]);
         let weapons = (await weaponResult).rows;
         let armors = (await armorResult).rows;
 
-        if (itemIndex >= weapons.length + armors.length || itemIndex < 0 || purchaseAmount <= 0) {
+        if (itemIndex >= weapons.length + armors.length) {
             error(msg, errors.helpFormatting(module.exports));
             return;
         }
@@ -62,13 +55,15 @@ module.exports = {
         if (itemIndex < weapons.length) {
             db.makeQuery(`DELETE FROM playersWeapons WHERE weapon_id = (SELECT id FROM weapons WHERE title = $2)
             AND player_id = (SELECT id FROM players WHERE userid = $1)`,
-            [userid, item.title]);
+            [giftedID, item.title]);
         }
         else {
             db.makeQuery(`DELETE FROM playersArmors WHERE armor_id = (SELECT id FROM armors WHERE title = $2)
             AND player_id = (SELECT id FROM players WHERE userid = $1)`,
-            [userid, item.title]);
+            [giftedID, item.title]);
         }
+
+        msg.reply(`Removed ${item.title} from ${gifted.rows[0].title}.`);
     },
 
     reaction: async (reaction, user) => {

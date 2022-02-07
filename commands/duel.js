@@ -7,20 +7,7 @@ const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
 const {isValid} = require('../systems/autoDeleter');
 const {delay} = require('../utils/delay');
-
-function getUserIDFromMention(mention) {
-	if (!mention) return;
-
-	if (mention.startsWith('<@') && mention.endsWith('>')) {
-		mention = mention.slice(2, -1);
-
-		if (mention.startsWith('!')) {
-			mention = mention.slice(1);
-		}
-	}
-
-    return mention;
-}
+const {getUserIDFromMention} = require('../utils/getUserIDFromMention');
 
 
 var payBet = async (endgame, pkg) => {

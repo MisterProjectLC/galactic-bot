@@ -6,6 +6,7 @@ const {removeReactions} = require('../utils/removeReactions');
 const {capitalize} = require('../utils/capitalize');
 const {xpThreshold} = require('../systems/rewards');
 const {isValid} = require('../systems/autoDeleter');
+const {getUserIDFromMention} = require('../utils/getUserIDFromMention');
 
 const ITENS_PER_VIEWING = 6;
 
@@ -64,20 +65,36 @@ var onListReaction = (reaction, user, info, objectName, lineBuilder) => {
 module.exports = {
     name: "info",
     category: "General",
-    description: "Check your stats, items and character.", 
-    min: 0, max: 0, cooldown: 5,
+    description: "Check your stats, items and character.",
+    examples: ["#info: check your own stats and items.", "#info @User: check the mentioned user's stats and items."],
+    min: 0, max: 1, cooldown: 5,
     execute: async (com_args, msg) => {
-        let response = await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE userID`, [msg.author.id]);
+        let userid = msg.author.id;
+
+        if (com_args.length > 0) {
+            userid = getUserIDFromMention(com_args[0]);
+            if (userid === null) {
+                msg.reply("Couldn't find the mentioned player...");
+                msg.reply(errors.helpFormatting(module.exports));
+                return;
+            }
+        }
+
+        let response = await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE userID`, [userid]);
         let player = response.rows[0];
         if (response.rowCount < 1) {
-            msg.reply(errors.unregisteredPlayer);
+            if (com_args.length > 0) {
+                msg.reply("Couldn't find the mentioned player...");
+                msg.reply(errors.helpFormatting(module.exports));
+            } else
+                msg.reply(errors.unregisteredPlayer);
             return;
         }
         
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
         .setTitle(player.title)
-        .setThumbnail(msg.author.avatarURL())
+        .setThumbnail(player.imageurl)
         .addField('Level', `${player.level}`, true)
         .addField('XP', `${player.xp}/${xpThreshold(player.level)}`, true)
         .addField('Coins', `${player.coins}`, true);
@@ -88,9 +105,9 @@ module.exports = {
         //db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [msg.author.id, (new Date().getTime())]);
 
         let weapon_result = db.makeQuery(`SELECT * FROM playersWeapons, eWeapons 
-        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [msg.author.id]);
+        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND weapon_id = eWeapons.id`, [userid]);
         let armor_result = db.makeQuery(`SELECT * FROM playersArmors, eArmors
-        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND armor_id = eArmors.id`, [msg.author.id]);
+        WHERE player_id = (SELECT id FROM players WHERE userid = $1) AND armor_id = eArmors.id`, [userid]);
 
         let player_weapons = (await weapon_result).rows;
         let player_armors = (await armor_result).rows;

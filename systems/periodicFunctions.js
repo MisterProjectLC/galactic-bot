@@ -204,7 +204,7 @@ var initializePeriodic = async (client) => {
     await delay(10*1000);
     setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
     setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
-    setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
+    setTimeout(rotatingShop, 1000);
     setTimeout(updateLeaderboard, 1000);
     setTimeout(spaceClubUpdate, 1000);
 }

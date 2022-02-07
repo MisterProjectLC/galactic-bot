@@ -95,14 +95,16 @@ let onListReaction = (interaction, info, playerTitle, objectName, lineBuilder) =
 
     // Turn pages
     let customId = interaction.customId;
-    if (customId === "left" && info.page > 0)
-        info.page -= 1;
+    if (customId === "left") {
+        if (info.page > 0)
+            info.page -= 1;
 
-    else if (customId === "right" && info.page < Math.floor((info.list.length - 1)/emojiNumbers.length))
+    } else if (customId === "right") {
+        if (info.page < Math.floor((info.list.length - 1)/emojiNumbers.length))
         info.page += 1;
 
     // Toggle weapon
-    else {
+    } else {
         let objectNumber = info.page*emojiNumbers.length + parseInt(customId);
         if (info.list.length <= objectNumber)
             return info;

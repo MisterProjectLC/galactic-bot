@@ -6,6 +6,7 @@ const encounter = require('../systems/duelEncounter');
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
 const {isValid} = require('../systems/autoDeleter');
+const {delay} = require('../utils/delay');
 
 function getUserIDFromMention(mention) {
 	if (!mention) return;
@@ -99,7 +100,11 @@ module.exports = {
         m.react('❌').catch(err => console.log(err));
 
         saved_messages.add_message('duelConfirmation', m.id, {msg: msg, confirmMsg: m, challengerID: msg.author.id, challengedID: challengedID, bet: bet});
+
+        await delay(1000 * 60);
+        deleteMessage(m, 'duelConfirmation');
     },
+
     reaction: async (reaction, user, added) => {
         let msg = reaction.message;
         let emoji = reaction.emoji.toString();

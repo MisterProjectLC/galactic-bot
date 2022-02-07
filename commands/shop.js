@@ -272,10 +272,15 @@ module.exports = {
 
             if (emoji === "❌") {
                 msg.edit("Purchase cancelled.");
-            } else {
-                msg.edit("Purchase confirmed!");
-                
-                db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [user.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
+            } else {              
+                await db.makeQuery(`UPDATE players SET coins = coins - $2 WHERE userid = $1`, [user.id, pkg.item.cost_per_level*pkg.purchaseAmount]);
+                db.makeQuery(`SELECT coins FROM players WHERE userid = $1`, [user.id]).then(result => {
+                    if (result.rowCount < 1)
+                        return;
+
+                    msg.edit(`Purchase confirmed! You now have **${result.rows[0].coins} coins**.`);
+                });
+
                 if (pkg.isWeapon) {
                     db.makeQuery(`SELECT buy_weapon($1, $2, $3)`, [user.id, pkg.item.title, pkg.purchaseAmount]);
                     console.log("Weapon bought!");

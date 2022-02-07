@@ -3,13 +3,14 @@ const errors = require('../data/errors');
 const rewards = require('../systems/rewards');
 const cooldownControl = require('../utils/cooldownControl');
 const {isValid} = require('../systems/autoDeleter');
+const {timeFormatter} = require('../utils/timeFormatter');
 
 // Exports
 module.exports = {
     name: "daily",
     category: "Rewards",
     description: "Reclaim your daily reward.", 
-    min: 0, max: 0, cooldown: 86400, cooldownMessage: "You already collected for today.",
+    min: 0, max: 0, cooldown: 0, cooldownMessage: "You already collected for today.",
     execute: async (com_args, msg) => {
         let result = await db.makeQuery(`SELECT next_daily FROM players WHERE userid = $1`, [msg.author.id]);
         if (result.rowCount < 1) {
@@ -19,7 +20,8 @@ module.exports = {
         }
 
         if (result.rows[0].next_daily !== null && result.rows[0].next_daily >= new Date()) {
-            msg.reply("You already collected for today.");
+            let timeLeft = ((result.rows[0].next_daily - new Date())/ 1000).toFixed(1);
+            msg.reply(`You already collected for today. Collect again in ${timeFormatter(timeLeft)}`);
             return;
         }
 

@@ -1,4 +1,4 @@
-const timeFormatter = require('./timeFormatter').timeFormatter;
+const {timeFormatter} = require('./timeFormatter');
 const Discord = require('discord.js');
 const delay = require('../utils/delay').delay;
 var usageCooldowns = new Discord.Collection();

@@ -75,7 +75,10 @@ module.exports = {
         weapons = (await weapons).rows;
         armors = (await armors).rows;
 
-        let text = "";
+        let embed = new Discord.MessageEmbed()
+        .setColor(0x1d51cc)
+        .setTitle(`Contents`);
+
         for (let i = 0; i < COUNT_ITEMS; i++) {
             let rand = Math.floor(Math.random()*(weapons.length+armors.length));
 
@@ -89,10 +92,10 @@ module.exports = {
                 db.makeQuery(`SELECT buy_armor($1, $2, $3)`, [user.id, title, amount]);
             }
 
-            text += `You received **${amount} Levels** of **${title}**!\n`;
+            embed.addField(`${title}`, `${amount} Levels`, true);
         }
 
-        msg.channel.send(`<@${pkg.giftedID}>, ${text}`);
+        msg.channel.send({embeds: [embed]});
         rewards.giveCoins(user.id, pkg.coins, msg.channel, module.exports);
     },
     permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")

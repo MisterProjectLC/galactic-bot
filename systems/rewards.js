@@ -44,7 +44,7 @@ var giveXP = async (userID, xp, channel, command) => {
         }
 
         if (!levelup)
-            channel.send(`<@${userID}>, you have received ${xp}XP! You now have ${newXP}XP.`);
+            channel.send(`<@${userID}>, you have received **${xp}XP**! You now have **${newXP}XP**.`);
         
         await db.makeQuery(`UPDATE players SET xp = $2, level = $3 WHERE userid = $1`, [userID, newXP, level]);
         await db.makeQuery(`UPDATE entities SET health = health + 4*$2 WHERE id = (SELECT entity FROM players WHERE userid = $1)`, [userID, moreLevels]);
@@ -62,7 +62,7 @@ var giveLevels = async (userID, levels, channel, command) => {
             return;
         }
         
-        let level = Math.min(100, result.rows[0].level+levels); 
+        let level = Math.max(1, Math.min(100, result.rows[0].level+levels)); 
             
         if (level >= 100) {
             if (channel)
@@ -70,9 +70,12 @@ var giveLevels = async (userID, levels, channel, command) => {
             db.makeQuery(`UPDATE players SET victory_time = to_timestamp($2/1000.0) WHERE userid = $1`, [userID, (new Date().getTime())]);
 
         } else {
-            threshold = xpThreshold(level);
-            if (channel)
-                channel.send(`<@${userID}>, you have leveled up! You are now at **Level ${level}**.`);
+            if (channel) {
+                if (levels > 0)
+                    channel.send(`<@${userID}>, you have leveled up! You are now at **Level ${level}**.`);
+                else
+                    channel.send(`<@${userID}>, huh, it seems you are now at **Level ${level}**...`);
+            }
         }
         
         await db.makeQuery(`UPDATE players SET level = $2 WHERE userid = $1`, [userID, level]);
@@ -93,9 +96,13 @@ var giveCoins = async (userID, coins, channel, command) => {
                 cooldownControl.resetCooldown(command, userID);
             return;
         }
-        channel.send(`<@${userID}>, You have received **${coins} coins**! You now have **${result.rows[0].coins+coins} coins**.`);
 
-        await db.makeQuery(`UPDATE players SET coins = coins + $2 WHERE userid = $1`, [userID, coins]);
+        if (coins > 0)
+            channel.send(`<@${userID}>, You have received **${coins} coins**! You now have **${result.rows[0].coins+coins} coins**.`);
+        else
+            channel.send(`<@${userID}>, You have lost **${-coins} coins**! You now have **${Math.max(0, result.rows[0].coins+coins)} coins**.`);
+
+        await db.makeQuery(`UPDATE players SET coins = GREATEST(0, coins + $2) WHERE userid = $1`, [userID, coins]);
     });
 }
 

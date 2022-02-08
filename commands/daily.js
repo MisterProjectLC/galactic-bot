@@ -25,7 +25,6 @@ module.exports = {
             return;
         }
 
-
         rewards.giveCoins(msg.author.id, 100, msg.channel, module.exports);
 
         let time = new Date();

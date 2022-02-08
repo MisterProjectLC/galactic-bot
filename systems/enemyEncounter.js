@@ -153,6 +153,13 @@ var updateEncounter = async (reaction, user, pkg, added, command) => {
 
     // Battle
     let endgame = await generateBattle(false, playerInstances, enemies, msg);
+
+    // Results
+    let text = "";
+    pkg.players.forEach(player => {
+        text += `<@${player.info.userid}>, `;
+    })
+
     if (endgame == 1) {
         let xpGained = pkg.enemies.reduce((previousValue, enemy) => {
             return previousValue += enemy.given_xp;
@@ -166,6 +173,9 @@ var updateEncounter = async (reaction, user, pkg, added, command) => {
             rewards.giveXP(player.info.userid, xpGained, msg.channel, command);
             rewards.giveCoins(player.info.userid, coinsGained, msg.channel, command);
         });
+        pkg.originalMsg.channel.send(text + "you have won!");
+    } else {
+        pkg.originalMsg.channel.send(text + "you have lost...");
     }
 }
 

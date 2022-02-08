@@ -136,7 +136,11 @@ var confirmDuelEncounter = async (reaction, user, pkg, added) => {
     // Battle
     let endgame = await generateBattle(true, leftInstances, rightInstances, msg, true, true);
 
-    console.log('FIM');
+    if (endgame == 1)
+        pkg.originalMsg.channel.send(`<@${pkg.leftPlayers[0].info.userid}>, you have won!\n<@${pkg.rightPlayers[0].info.userid}>, you have lost...`);
+    else
+        pkg.originalMsg.channel.send(`<@${pkg.rightPlayers[0].info.userid}>, you have won!\n<@${pkg.leftPlayers[0].info.userid}>, you have lost...`);
+    
     await pkg.outsideFunction(endgame, pkg.outsidePkg);
     cleanup(pkg);
 }

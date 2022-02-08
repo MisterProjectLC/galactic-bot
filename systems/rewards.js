@@ -98,9 +98,9 @@ var giveCoins = async (userID, coins, channel, command) => {
         }
 
         if (coins > 0)
-            channel.send(`<@${userID}>, You have received **${coins} coins**! You now have **${result.rows[0].coins+coins} coins**.`);
+            channel.send(`<@${userID}>, you have received **${coins} coins**! You now have **${result.rows[0].coins+coins} coins**.`);
         else
-            channel.send(`<@${userID}>, You have lost **${-coins} coins**! You now have **${Math.max(0, result.rows[0].coins+coins)} coins**.`);
+            channel.send(`<@${userID}>, you have lost **${-coins} coins**! You now have **${Math.max(0, result.rows[0].coins+coins)} coins**.`);
 
         await db.makeQuery(`UPDATE players SET coins = GREATEST(0, coins + $2) WHERE userid = $1`, [userID, coins]);
     });

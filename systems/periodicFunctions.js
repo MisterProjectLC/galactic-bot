@@ -34,16 +34,15 @@ var fetchMembers = async () => {
 
 var refresh = async (name, callback) => {
     console.log("Try Refresh " + name);
-    db.makeQuery('SELECT time FROM timers WHERE title = $1', [name]).then(result => {
-        if (result.rowCount > 0 && result.rows[0].time >= new Date())
-            return;
+    let result = await db.makeQuery('SELECT time FROM timers WHERE title = $1', [name])
+    if (result.rowCount > 0 && result.rows[0].time >= new Date())
+        return;
         
-        await callback();
-        let time = new Date();
-        time.setUTCHours(time.getUTCHours()+constants.adventuresCooldown);
-        db.makeQuery('UPDATE timers SET time = $2 WHERE title = $1', [name, time]);
-        console.log("Refresh " + name);
-    })
+    await callback();
+    let time = new Date();
+    time.setUTCHours(time.getUTCHours()+constants.adventuresCooldown);
+    db.makeQuery('UPDATE timers SET time = $2 WHERE title = $1', [name, time]);
+    console.log("Refresh " + name);
 }
 
 

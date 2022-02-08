@@ -62,7 +62,6 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
     }
 
     // Create summary message
-    let erred = false;
     let mainMsg = await msg.channel.send({embeds: [generateEnemyEmbed(title, maxEnemies, cancellable, enemyInfos, enemyInfosInGame)]});
 
     mainMsg.react('✅').catch(err => console.log(err));

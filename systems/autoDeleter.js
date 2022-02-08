@@ -14,7 +14,7 @@ module.exports.isValid = async (msg, commandName) => {
     if (shopMessageIDs.length == 0)
         await this.updateIDs();
 
-    if (shopMessageIDs.includes(msg.channel.id) && commandName != 'shop' && commandName != 'buy')
+    if (shopMessageIDs.includes(msg.channel.id) && commandName != 'shop' && commandName != 'buy' && commandName != 'check')
         return false;
 
     return true;

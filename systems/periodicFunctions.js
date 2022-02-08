@@ -56,7 +56,7 @@ var refreshAdventures = () => {
             let member = memberList.find(member => {return member.user.id == row.userid});
             console.log("test");
             if (member != undefined)
-                member.user.send(`You have just recharged an adventure!`);
+                member.user.send(`You have just recharged an adventure!`).catch(err => console.log(err));
         });
 
         rows = (await db.makeQuery(`SELECT userid FROM players WHERE adventures_left = $1`, [constants.adventuresMax-1])).rows;
@@ -65,7 +65,7 @@ var refreshAdventures = () => {
             let member = memberList.find(member => {return member.user.id == row.userid});
             console.log("test");
             if (member != undefined)
-                member.user.send(`You have just recharged all of your adventures!`);
+                member.user.send(`You have just recharged all of your adventures!`).catch(err => console.log(err));
         });
         
         db.makeQuery(`UPDATE players SET adventures_left = adventures_left + 1 WHERE adventures_left < $1`, [constants.adventuresMax]);

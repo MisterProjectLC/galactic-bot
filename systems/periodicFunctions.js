@@ -32,13 +32,13 @@ var fetchMembers = async () => {
 }
 
 
-var refresh = (name, callback) => {
+var refresh = async (name, callback) => {
     console.log("Try Refresh " + name);
     db.makeQuery('SELECT time FROM timers WHERE title = $1', [name]).then(result => {
         if (result.rowCount > 0 && result.rows[0].time >= new Date())
             return;
         
-        callback();
+        await callback();
         let time = new Date();
         time.setUTCHours(time.getUTCHours()+constants.adventuresCooldown);
         db.makeQuery('UPDATE timers SET time = $2 WHERE title = $1', [name, time]);
@@ -107,7 +107,8 @@ var makeAvailable = async (items, tableName) => {
 }
 
 var rotatingShop = async () => {
-    refresh('shop', async () => {
+    await refresh('shop', async () => {
+        // Rotate
         let w_promise = db.makeQuery('UPDATE weapons SET in_shop = false');
         let a_promise = db.makeQuery('UPDATE armors SET in_shop = false');
         await Promise.all([w_promise, a_promise]);
@@ -119,28 +120,30 @@ var rotatingShop = async () => {
 
         await makeAvailable(weapons, 'weapons');
         await makeAvailable(armors, 'armors');
-
-        // Edit old shop messages
-        Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
-            guild.fetch().then(async guild => {
-                let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'shop'`, [guild.id]);
-                if (oldShopResult.rowCount >= 1) {
-                    let oldMsg = oldShopResult.rows[0];
-
-                    weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
-                    armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
-                    weapons = (await weapons).rows;
-                    armors = (await armors).rows;
-
-                    guild.channels.fetch(oldMsg.channel_id).then(channel => {
-                        channel.messages.fetch(oldMsg.message_id).then(message => {
-                            message.edit(showShop(weapons, armors)).catch(err => console.log(err));
-                        });
-                    });
-                }
-            });
-        }))
     });
+
+    // Edit old shop messages
+    Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
+        guild.fetch().then(async guild => {
+            let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'shop'`, [guild.id]);
+            if (oldShopResult.rowCount >= 1) {
+                let oldMsg = oldShopResult.rows[0];
+
+                weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
+                armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
+                weapons = (await weapons).rows;
+                armors = (await armors).rows;
+
+                guild.channels.fetch(oldMsg.channel_id).then(channel => {
+                    channel.messages.fetch(oldMsg.message_id).then(message => {
+                        message.edit(showShop(weapons, armors)).catch(err => console.log(err));
+                    });
+                });
+            }
+        });
+    }))
+
+
     setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
 }
 

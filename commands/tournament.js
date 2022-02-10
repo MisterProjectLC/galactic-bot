@@ -243,6 +243,6 @@ module.exports = {
 
         saved_messages.add_message('prepareTournament', msg.id, pkg);
     },
-    permission: async (msg) => await isValid(msg, module.exports.name),
+    permission: async (msg) => true,
     findTournamentMessage: (hostID) => {return tournaments.hasOwnProperty(hostID) ? tournaments[hostID] : null}
 };

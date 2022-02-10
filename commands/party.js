@@ -133,6 +133,6 @@ module.exports = {
         msg.edit({embeds: [await createEmbed(pkg.members, result.rows, pkg.partySize)] });
         saved_messages.add_message('party', msg.id, {callerID: pkg.callerID, members: pkg.members, partySize: pkg.partySize, msg: msg});
     },
-    permission: async (msg) => await isValid(msg, module.exports.name),
+    permission: async (msg) => true,
     findPartyMessage: (hostID) => {return parties.hasOwnProperty(hostID) ? parties[hostID] : null}
 };

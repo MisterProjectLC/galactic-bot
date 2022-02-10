@@ -239,7 +239,7 @@ module.exports.Battle = class {
                 this.log.push(`**${defender.title}** has evaded (**${defender.evasionSum}%** evasion chance) **${attacker.title}**'s **${weapon.title}**! `
                 + `Their evasion chance is now at **${defender.evasionSum/2}%**.`);
                 defender.evasionSum /= 2;
-                return;
+                continue;
             }
     
             if (weapon.effect === null || !weapon.effect.cancelDamage) {

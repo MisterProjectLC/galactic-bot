@@ -165,4 +165,11 @@ CREATE TABLE fixedMessages (
 	message_id text,
 	title text,
 	PRIMARY KEY(guild_id, title)
-)	
+);
+
+CREATE TABLE commandChannels (
+	title text,
+	guild_id text,
+	channel_id text,
+	PRIMARY KEY(guild_id, title)
+);

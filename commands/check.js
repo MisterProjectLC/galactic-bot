@@ -3,6 +3,7 @@ const Discord = require('discord.js');
 const errors = require('../data/errors');
 const {capitalize} = require('../utils/capitalize');
 const {isValid} = require('../systems/autoDeleter');
+const { delay } = require('../utils/delay.js');
 
 // Exports
 module.exports = {
@@ -79,7 +80,12 @@ Regen: ${armors[i].regen}
 Evasion: ${armors[i].evasion}`, true);
         }
 
-        msg.reply({embeds: [embed]});
+        let m = await msg.reply({embeds: [embed]});
+
+        await delay(1000 * 10);
+        m.delete().catch(err => console.log(err));
+        msg.delete().catch(err => console.log(err));
+
     },
-    permission:  async (msg) => await isValid(msg, module.exports.name)
+    permission:  async (msg) => true
 };

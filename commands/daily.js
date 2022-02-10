@@ -32,5 +32,5 @@ module.exports = {
         db.makeQuery(`UPDATE players SET title = $2, imageURL = $3, next_daily = $4 WHERE userid = $1`, 
         [msg.author.id, msg.member.displayName, msg.author.avatarURL(), time]);
     }, 
-    permission:  async (msg) => await isValid(msg, module.exports.name)
+    permission:  async (msg) => true
 };

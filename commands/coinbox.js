@@ -5,8 +5,6 @@ const rewards = require('../systems/rewards');
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
 
-const COUNT_ITEMS = 3;
-
 function getUserIDFromMention(mention) {
 	if (!mention) return;
 

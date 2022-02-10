@@ -16,5 +16,5 @@ module.exports = {
     reaction: async (reaction, user) => {
         shop.reaction(reaction, user);
     },
-    permission:  async (msg) => await isValid(msg, module.exports.name)
+    permission:  async (msg) => true
 };

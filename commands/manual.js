@@ -36,5 +36,5 @@ module.exports = {
 
         msg.reply({embeds: [embed]});
     }, 
-    permission: async (msg) => await isValid(msg, module.exports.name)
+    permission: async (msg) => true
 };

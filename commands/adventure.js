@@ -3,7 +3,6 @@ const errors = require('../data/errors');
 const encounter = require('../systems/enemyEncounter');
 const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
-const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
@@ -76,5 +75,5 @@ module.exports = {
         encounter.onInteraction(interaction, module.exports);
     },
 
-    permission:  async (msg) => await isValid(msg, module.exports.name)
+    permission:  async (msg) => true
 };

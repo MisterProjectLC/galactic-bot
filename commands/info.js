@@ -140,7 +140,7 @@ module.exports = {
         }
     },
 
-    permission: async (msg) => await isValid(msg, module.exports.name),
+    permission: async (msg) => true,
     reaction: (reaction, user) => {
         let msg = reaction.message;
 

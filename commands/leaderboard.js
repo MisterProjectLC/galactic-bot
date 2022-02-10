@@ -154,7 +154,7 @@ module.exports = {
             saved_messages.add_message('leaderboardsPageTurn', msg.id, pkg);
         }
     },
-    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder") && await isValid(msg, module.exports.name),
+    permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder"),
     generatePage: generatePage,
     fetchLeaderboard: fetchLeaderboard,
     LINES_PER_PAGE: LINES_PER_PAGE

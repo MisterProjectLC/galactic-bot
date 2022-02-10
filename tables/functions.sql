@@ -170,3 +170,14 @@ BEGIN
 	RETURN true;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION add_channel(ititle text, iguild_id text, ichannel_id text) RETURNS BOOLEAN AS $$
+BEGIN
+	IF (NOT EXISTS (SELECT * FROM commandChannels WHERE title = ititle AND guild_id = iguild_id)) THEN
+		INSERT INTO commandChannels(title, guild_id, channel_id) VALUES (ititle, iguild_id, ichannel_id);
+		RETURN true;
+	END IF;
+	RETURN false;
+END;
+$$ LANGUAGE plpgsql;

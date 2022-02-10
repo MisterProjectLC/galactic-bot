@@ -50,10 +50,11 @@ var refreshAdventures = () => {
     refresh('adventures', async () => {
         let rows = (await db.makeQuery(`SELECT userid FROM players WHERE adventures_left = 0`)).rows;
         let memberList = await fetchMembers();
+        console.log(memberList);
 
         rows.forEach(row => {
             let member = memberList.find(member => {return member.user.id == row.userid});
-            console.log("test");
+            console.log("one recharge");
             if (member != undefined)
                 member.user.send(`You have just recharged an adventure!`).catch(err => console.log(err));
         });
@@ -62,14 +63,14 @@ var refreshAdventures = () => {
 
         rows.forEach(row => {
             let member = memberList.find(member => {return member.user.id == row.userid});
-            console.log("test");
+            console.log("all recharge");
             if (member != undefined)
                 member.user.send(`You have just recharged all of your adventures!`).catch(err => console.log(err));
         });
         
         db.makeQuery(`UPDATE players SET adventures_left = adventures_left + 1 WHERE adventures_left < $1`, [constants.adventuresMax]);
     });
-    setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
+    setTimeout(refreshAdventures, 60 * 60 * 1000);
 }
 
 
@@ -77,7 +78,7 @@ var refreshBosses = () => {
     refresh('bosses', async () => {
         db.makeQuery(`UPDATE players SET bosses_left = bosses_left + 1 WHERE bosses_left < $1`, [constants.bossesMax]);
     });
-    setTimeout(refreshAdventures, constants.bossesCooldown * 60 * 60 * 1000);
+    setTimeout(refreshAdventures, 60 * 60 * 1000);
 }
 
 
@@ -122,16 +123,16 @@ var rotatingShop = async () => {
     });
 
     // Edit old shop messages
+    weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
+    armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
+    weapons = (await weapons).rows;
+    armors = (await armors).rows;
+
     Client.guilds.fetch().then(guilds => guilds.forEach(guild => {
         guild.fetch().then(async guild => {
             let oldShopResult = await db.makeQuery(`SELECT * FROM fixedMessages WHERE guild_id = $1 AND title = 'shop'`, [guild.id]);
             if (oldShopResult.rowCount >= 1) {
                 let oldMsg = oldShopResult.rows[0];
-
-                weapons = db.makeQuery('SELECT title, cost_per_level, min_level FROM weapons WHERE in_shop = true ORDER BY cost_per_level, title');
-                armors = db.makeQuery('SELECT title, cost_per_level, min_level FROM armors WHERE in_shop = true ORDER BY cost_per_level, title');
-                weapons = (await weapons).rows;
-                armors = (await armors).rows;
 
                 guild.channels.fetch(oldMsg.channel_id).then(channel => {
                     channel.messages.fetch(oldMsg.message_id).then(message => {
@@ -143,7 +144,7 @@ var rotatingShop = async () => {
     }))
 
 
-    setTimeout(rotatingShop, 24 * 60 * 60 * 1000);
+    setTimeout(rotatingShop, 60 * 60 * 1000);
 }
 
 var updateLeaderboard = async () => {
@@ -204,8 +205,8 @@ var spaceClubUpdate = async () => {
 var initializePeriodic = async (client) => {
     Client = client;
     await delay(10*1000);
-    setTimeout(refreshAdventures, constants.adventuresCooldown * 60 * 60 * 1000);
-    setTimeout(refreshBosses, constants.bossesCooldown * 60 * 60 * 1000);
+    setTimeout(refreshAdventures, 1000);
+    setTimeout(refreshBosses, 1000);
     setTimeout(rotatingShop, 1000);
     setTimeout(updateLeaderboard, 1000);
     setTimeout(spaceClubUpdate, 1000);

@@ -57,5 +57,5 @@ module.exports = {
         interaction.deferUpdate().catch(console.error);
     },
 
-    permission:  async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder") && await isValid(msg, module.exports.name)
+    permission:  async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
 };

@@ -114,5 +114,5 @@ module.exports = {
         encounter.onInteraction(interact);
     },
 
-    permission:  async (msg) => await isValid(msg, module.exports.name)
+    permission:  async (msg) => true
 };

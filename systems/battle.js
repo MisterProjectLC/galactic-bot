@@ -10,6 +10,15 @@ const TURN_DELAY = 6;
 const MAXIMUM_TURN = 9;
 const LINES_PER_LOG = 12;
 
+/**
+ * @param num The number to round
+ * @param precision The number of decimal places to preserve
+ */
+ function roundUp(num, precision) {
+    precision = Math.pow(10, precision)
+    return Math.ceil(num * precision) / precision
+  }
+
 // Exports
 module.exports.healthbar = healthbar;
 module.exports.Weapon = Weapon;
@@ -195,6 +204,7 @@ module.exports.Battle = class {
     
     individualRound(individual, opponents, attackAll) {
         individual.evasionSum += individual.evasion;
+        individual.evasionSum = roundUp(individual.evasionSum, 2);
         if (individual.evasion > 0)
             this.log.push(`**${individual.title}**'s evasion chance increased by **${individual.evasion}%**. It is now at **${individual.evasionSum}%**.`);
 

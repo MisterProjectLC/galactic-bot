@@ -5,7 +5,7 @@ const {delay} = require('../utils/delay');
 const {deleteMessage} = require('../utils/deleteMessage');
 const Discord = require('discord.js');
 
-const BATTLE_SIZE = 12;
+const BATTLE_SIZE = 5;
 
 var createPartyEmbed = async (members, unorderedRows, partySize, minLevel) => {
     let titles = [];
@@ -58,11 +58,18 @@ module.exports = {
             // Create party
             let partyEmbed = await createPartyEmbed([], result.rows, BATTLE_SIZE, adventureList[i].min_level);
             let m = await msg.channel.send({embeds: [partyEmbed]});
+            let this_id = m.id;
             m.react('✅');
-            saved_messages.add_message('defenseParty', m.id, {members: [], msg: m, adventure: adventureList[i]});
+            saved_messages.add_message('defenseParty', this_id, {members: [], msg: m, adventure: adventureList[i]});
 
-            await delay(1000 * 60 * 60 * 4);
-            deleteMessage(m, 'defenseParty');
+            await delay(1000 * 60 * 5);
+            let time_awaiting = 5;
+            while (saved_messages.get_message('defenseParty', this_id) != null) {
+                let ms = await msg.channel.send("The next wave can't be fought until this one is dealt with!");
+                await delay(1000 * 60 * time_awaiting);
+                time_awaiting += 1;
+                ms.delete().catch(err => console.log(err));
+            }
         }
 
 
@@ -103,7 +110,7 @@ module.exports = {
             let result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
             WHERE enemiesAdventures.adventure_id = $1`, [pkg.adventure.id]);
             let enemyList = [];
-            for (let i = 0; i < 4; i++)
+            for (let i = 0; i < (BATTLE_SIZE/3)+1; i++)
                 result.rows.forEach(row => enemyList.push(row));
             await encounter.generateEnemyEncounter(pkg.adventure.title.substring(0, pkg.adventure.title.length-10) + " Invasion", msg, 
                 module.exports, pkg.members, enemyList, false, BATTLE_SIZE, BATTLE_SIZE);

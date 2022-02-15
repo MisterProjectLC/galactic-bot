@@ -52,14 +52,14 @@ module.exports = {
             return;
         }
 
-        /*if (player.adventures_left < 1) {
+        if (player.adventures_left < 1) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
             msg.reply("You are out of adventures right now! Wait a bit before going on an adventure again.");
             return;
         } else {
             msg.reply(`Adventures left: ${player.adventures_left-1}/${constants.adventuresMax}. Regenerates one every ${constants.adventuresCooldown} hours.`);
             db.makeQuery(`UPDATE players SET adventures_left = adventures_left - 1 WHERE userid = $1`, [msg.author.id]);
-        }*/
+        }
 
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
         WHERE enemiesAdventures.adventure_id = $1`, [bestMatch.id]);

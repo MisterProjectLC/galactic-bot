@@ -19,7 +19,7 @@ module.exports = {
         let isFounder = msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder");
         let level = isMember ? spaceClubLevels : 1;
         
-        await db.makeQuery(`INSERT INTO players(userID, title, imageURL, level, spaceClub, is_founder) VALUES ($1, $2, $3, $4, $5)`, 
+        await db.makeQuery(`INSERT INTO players(userID, title, imageURL, level, spaceClub, is_founder) VALUES ($1, $2, $3, $4, $5, $6)`, 
         [msg.author.id, msg.member.displayName, msg.author.avatarURL(), level, isMember, isFounder]);
 
         msg.reply("You are now registered! Let's HOAG Adventure begins!");

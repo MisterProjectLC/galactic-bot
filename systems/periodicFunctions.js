@@ -6,7 +6,7 @@ const {asyncForEach} = require('../utils/asyncForEach');
 const {showShop} = require('../commands/shop');
 const leaderboard = require('../commands/leaderboard');
 const saved_messages = require('../utils/saved_messages');
-const fetchMembers = require('../utils/fetchMembers');
+const {fetchMembers} = require('../utils/fetchMembers');
 
 var Client;
 

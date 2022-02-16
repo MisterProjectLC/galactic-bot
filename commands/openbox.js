@@ -1,6 +1,7 @@
 const db = require('../external/database.js');
 const Discord = require('discord.js');
 const errors = require('../data/errors');
+const rewards = require('../systems/rewards')
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
 
@@ -10,7 +11,7 @@ const COUNT_ITEMS = 3;
 var boxes = {};
 
 
-var openBox = (gainItems, msg) => {
+var openBox = async (gainItems, pkg, user) => {
     let itemLevel = Math.max(1, 10+ Math.floor((pkg.gifted.level- 10)/20)*20);
     console.log(itemLevel);
     let weapons = db.makeQuery(`SELECT * FROM weapons WHERE min_level = $1 AND enemy_weapon = false`, [itemLevel]); 
@@ -39,9 +40,11 @@ var openBox = (gainItems, msg) => {
             embed.addField(`${title}`, `${amount} Levels`, true);
         }
     }
+    let coins = (Math.floor(pkg.gifted.level/10)+1)*50;
+    embed.addField(`Coins`, `${coins} Coins`, true);
 
-    msg.channel.send({embeds: [embed]});
-    rewards.giveCoins(user.id, pkg.coins, msg.channel, module.exports);
+    pkg.msg.channel.send({embeds: [embed]});
+    rewards.giveCoins(user.id, coins, pkg.msg.channel, module.exports);
 }
 
 
@@ -66,7 +69,7 @@ var createEmbed = (boxList) => {
 
     let text = '';
     boxList.forEach((element, index) => {
-        text += `${index}. ${element}\n`;
+        text += `${index+1}. ${element}\n`;
     });
     embed.addField('Lista', text, false);
 
@@ -82,6 +85,8 @@ var createRow = (boxList) => {
             .setLabel(emojiNumbers[index])
             .setStyle('PRIMARY'),
         );
+
+    return row;
 }
 
 // Exports
@@ -90,21 +95,28 @@ module.exports = {
     category: "Rewards",
     description: "Opens a received box.",
     examples: ["#openbox: shows the list of boxes to open."],
-    min: 1, max: 1, cooldown: 0,
+    min: 0, max: 0, cooldown: 0,
     insertBox: insertBox,
-    execute: async (com_args, msg, quoted_list, Client) => {
+    execute: async (com_args, msg) => {
         if (!boxes.hasOwnProperty(msg.author.id) || boxes[msg.author.id].length == 0) {
             msg.reply("You don't have any boxes...");
         }
         let theirBoxes = boxes[msg.author.id];
 
+        let gifted = await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE userID`, [msg.author.id]);
+        if (gifted.rowCount < 1) {
+            msg.reply(errors.unregisteredPlayer);
+            return;
+        }
+        gifted = gifted.rows[0];
+
         let m = await msg.reply({embeds: [createEmbed(theirBoxes)], components: [createRow(theirBoxes)]});
 
-        saved_messages.add_message('boxList', msg.author.id, {boxList: theirBoxes, msg: m});
-
-        let pkg = saved_messages.get_message('boxList', interaction.member.user.id);
+        let pkg = saved_messages.get_message('boxList', msg.author.id);
         if (pkg)
             deleteMessage(pkg.msg, 'boxList');
+
+        saved_messages.add_message('boxList', msg.author.id, {boxList: theirBoxes, msg: m, gifted: gifted});
     },
 
     interaction: (interaction) => {
@@ -120,10 +132,14 @@ module.exports = {
             return;
 
         let selectedBox = pkg.boxList[objectNumber];
-        openBox(selectedBox == "Spacebox", pkg.msg);
+        openBox(selectedBox == "Spacebox", pkg, interaction.member.user);
         
         // Update embed
-        pkg.msg.edit({embeds: [createEmbed(pkg.boxList)], components: [createRow(pkg.boxList)]});
+        pkg.boxList.splice(objectNumber, 1);
+        if (pkg.boxList.length <= 0)
+            pkg.msg.delete().catch(err => console.log(err));
+        else
+            pkg.msg.edit({embeds: [createEmbed(pkg.boxList)], components: [createRow(pkg.boxList)]}).catch(err => console.log(err));
         interaction.deferUpdate().catch(console.error);
     },
 

@@ -3,14 +3,14 @@ const Discord = require('discord.js');
 const errors = require('../data/errors');
 const {getUserIDFromMention} = require('../utils/getUserIDFromMention');
 const {fetchMembers} = require('../utils/fetchMembers');
-const {boxes} = require('./openbox');
+const {insertBox} = require('./openbox');
 
 // Exports
 module.exports = {
     name: "coinbox",
     category: "Rewards",
-    description: "Admin only. Gifts a pack of coins to a player.",
-    examples: ["#coinbox @User: gift a pack of coins to the mentioned user."],
+    description: "Admin only. Gifts a box of coins to a player.",
+    examples: ["#coinbox @User: gift a box of coins to the mentioned user."],
     min: 1, max: 1, cooldown: 0,
     execute: async (com_args, msg, quoted_list, Client) => {
         let giftedID = getUserIDFromMention(com_args[0]);
@@ -36,9 +36,10 @@ module.exports = {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
         .setTitle(`${gifted.title}, you received a box!`)
-        .setDescription(`Contents:\n${coins} coins`);
+        .setDescription(`Contents:\nAssorted coins`);
 
         // Create summary message
+        msg.reply("Box gifted.");
         await member.send({embeds: [embed]}).catch(err => console.log(err));
         insertBox('Coinbox', giftedID, msg);
     },

@@ -44,6 +44,13 @@ module.exports = {
         let user = interaction.user;
         let member = interaction.member;
 
+        if (!msg || !user)
+            return;
+
+        let member = interaction.member;
+        if (!member)
+            return;
+
         let customId = interaction.customId;
         if (customId === "daily") {
             timedReward('next_daily', 100, 24, user, member, msg.channel);

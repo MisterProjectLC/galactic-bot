@@ -173,6 +173,9 @@ var onInteraction = (interaction, command) => {
     let user = interaction.user;
     let confirmID = msg.id;
 
+    if (!msg || !user)
+        return;
+
     // Secondary index to main package (player -> package)
     let index = saved_messages.get_message('duelPlayer', msg.id);
     if (index)

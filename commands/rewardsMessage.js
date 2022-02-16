@@ -42,7 +42,6 @@ module.exports = {
     interaction: (interaction) => {
         let msg = interaction.message;
         let user = interaction.user;
-        let member = interaction.member;
 
         if (!msg || !user)
             return;

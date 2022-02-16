@@ -6,30 +6,9 @@ const {asyncForEach} = require('../utils/asyncForEach');
 const {showShop} = require('../commands/shop');
 const leaderboard = require('../commands/leaderboard');
 const saved_messages = require('../utils/saved_messages');
+const fetchMembers = require('../utils/fetchMembers');
 
 var Client;
-
-var fetchMembers = async () => {
-    let memberList = [];
-
-    let guilds = await Client.guilds.fetch().catch(console.error);
-    let guildArray = [];
-    guilds.forEach((value, key) => {
-        guildArray.push(value);
-    })
-
-    await asyncForEach(guildArray, async guild => {
-        guild = await guild.fetch().catch(console.error);
-        
-        let members = await guild.members.fetch().catch(console.error);
-        members.forEach(member => {
-            if (!memberList.includes(member))
-                memberList.push(member);
-        });
-    });
-
-    return memberList;
-}
 
 
 var refresh = async (name, callback) => {
@@ -49,7 +28,7 @@ var refresh = async (name, callback) => {
 var refreshAdventures = () => {
     refresh('adventures', async () => {
         let rows = (await db.makeQuery(`SELECT userid FROM players WHERE adventures_left = 0`)).rows;
-        let memberList = await fetchMembers();
+        let memberList = await fetchMembers(Client);
         console.log(memberList);
 
         rows.forEach(row => {
@@ -175,7 +154,7 @@ var updateLeaderboard = async () => {
 
 
 var spaceClubUpdate = async () => {
-    let memberList = await fetchMembers();
+    let memberList = await fetchMembers(Client);
 
     let newClubList = [];
     let kickList = [];

@@ -121,10 +121,10 @@ module.exports = {
 
     interaction: (interaction) => {
         // Package
-        if (!interaction || !interaction.member || !interaction.member.user || !interaction.member.user.id)
+        if (!interaction || !interaction.user || !interaction.user.id)
             return;
 
-        let pkg = saved_messages.get_message('boxList', interaction.member.user.id);
+        let pkg = saved_messages.get_message('boxList', interaction.user.id);
         if (pkg == null)
             return;
 
@@ -135,7 +135,7 @@ module.exports = {
             return;
 
         let selectedBox = pkg.boxList[objectNumber];
-        openBox(selectedBox == "Spacebox", pkg, interaction.member.user);
+        openBox(selectedBox == "Spacebox", pkg, interaction.user);
         
         // Update embed
         pkg.boxList.splice(objectNumber, 1);

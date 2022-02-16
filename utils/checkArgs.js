@@ -5,7 +5,7 @@ const autoDeleter = require('../systems/autoDeleter');
 const checkArgs = async (command, args, msg) => {
     // Check args
     if (command.min && !(command.min < args.length)) {
-        let m = msg.reply(errors.invalidArgs);
+        let m = await msg.reply(errors.invalidArgs);
         await delay(1000*5);
         if (m)
             m.delete().catch(err => console.log(err));

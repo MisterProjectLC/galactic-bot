@@ -6,7 +6,6 @@ const compareTwoStrings = require('string-similarity').compareTwoStrings;
 const saved_messages = require('../utils/saved_messages');
 const party = require('./party');
 const constants = require('../data/constants');
-const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {

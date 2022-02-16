@@ -3,6 +3,7 @@ const errors = require('../data/errors');
 const encounter = require('../systems/enemyEncounter');
 const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
+const constants = require('../data/constants');
 
 // Exports
 module.exports = {

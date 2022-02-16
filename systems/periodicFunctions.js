@@ -145,6 +145,11 @@ var updateLeaderboard = async () => {
         let channel = await guild.channels.fetch(oldMsg.channel_id);
         let message = await channel.messages.fetch(oldMsg.message_id);
         let pkg = await leaderboard.fetchLeaderboard();
+        if (!pkg) {
+            message.edit("The leaderboard is empty...").catch(err => console.log(err));
+            return;
+        }
+
         saved_messages.add_message('leaderboardsPageTurn', message.id, pkg);
         message.edit(await leaderboard.generatePage(pkg.rows.slice(0, leaderboard.LINES_PER_PAGE), 0, pkg.maxPages)).catch(err => console.log(err));
     });

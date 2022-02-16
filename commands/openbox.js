@@ -121,6 +121,9 @@ module.exports = {
 
     interaction: (interaction) => {
         // Package
+        if (!interaction || !interaction.member || !interaction.member.user || !interaction.member.user.id)
+            return;
+
         let pkg = saved_messages.get_message('boxList', interaction.member.user.id);
         if (pkg == null)
             return;

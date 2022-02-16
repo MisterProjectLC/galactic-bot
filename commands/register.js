@@ -1,5 +1,5 @@
 const db = require('../external/database.js');
-const {isValid} = require('../systems/autoDeleter');
+const {spaceClubLevels} = require('../data/constants');
 
 // Exports
 module.exports = {
@@ -14,9 +14,12 @@ module.exports = {
             msg.reply("You are already registered!");
             return;
         }
-            
-        await db.makeQuery(`INSERT INTO players(userID, title, imageURL) VALUES ($1, $2, $3)`, 
-        [msg.author.id, msg.member.displayName, msg.author.avatarURL()]);
+
+        let isMember = msg.member.roles.cache.some(role => role.name.toLowerCase() == "spaceclub");
+        let level = isMember ? spaceClubLevels : 1;
+        
+        await db.makeQuery(`INSERT INTO players(userID, title, imageURL, level, spaceClub) VALUES ($1, $2, $3, $4, $5)`, 
+        [msg.author.id, msg.member.displayName, msg.author.avatarURL(), level, isMember]);
 
         msg.reply("You are now registered! Let's HOAG Adventure begins!");
     }, 

@@ -7,9 +7,9 @@ const {showShop} = require('../commands/shop');
 const leaderboard = require('../commands/leaderboard');
 const saved_messages = require('../utils/saved_messages');
 const {fetchMembers} = require('../utils/fetchMembers');
+const {spaceClubLevels} = require('../data/constants');
 
 var Client;
-
 
 var refresh = async (name, callback) => {
     console.log("Try Refresh " + name);
@@ -165,7 +165,7 @@ var spaceClubUpdate = async () => {
         if (member.roles.cache.some(role => role.name == "SpaceClub") && nonMembers.some(row => row.userid == member.user.id)
                 && !newClubList.includes(member.user.id)) {
             newClubList.push(member.user.id);
-            await rewards.giveLevels(member.user.id, 20);
+            await rewards.giveLevels(member.user.id, spaceClubLevels);
         
         } else if (!member.roles.cache.some(role => role.name == "SpaceClub") && !nonMembers.some(row => row.userid == member.user.id)
                 && !kickList.includes(member.user.id))
@@ -173,7 +173,8 @@ var spaceClubUpdate = async () => {
     });
 
     db.makeQuery('UPDATE players SET spaceClub = true WHERE spaceClub = false AND userid = ANY($1)', [newClubList]);
-    await db.makeQuery('UPDATE players SET spaceClub = false, level = GREATEST(1, level - 20) WHERE spaceClub = true AND userid = ANY($1)', [kickList]);
+    await db.makeQuery(`UPDATE players SET spaceClub = false, level = GREATEST(1, level - ${spaceClubLevels}) WHERE spaceClub = true AND userid = ANY($1)`,
+    [kickList]);
     db.makeQuery(`UPDATE entities SET health = 20 + 4*(SELECT level FROM players WHERE players.entity = entities.id) 
     WHERE id = ANY(SELECT entity FROM players);`);
 

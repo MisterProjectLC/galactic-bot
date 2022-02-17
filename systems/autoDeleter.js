@@ -49,9 +49,9 @@ module.exports.isValid = async (msg, commandName) => {
         console.log(channelCache);
     }
 
-    if (!(channelCache.hasOwnProperty(msg.guildId) && channelCache[msg.guildId].hasOwnProperty(commandName) 
+    /*if (!(channelCache.hasOwnProperty(msg.guildId) && channelCache[msg.guildId].hasOwnProperty(commandName) 
         && channelCache[msg.guildId][commandName].includes(msg.channel.id)) && !channelCommands.includes(commandName))
-        return false;
+        return false;*/
 
     return true;
 }

@@ -32,6 +32,7 @@ const errors = require('./data/errors.js');
 const {initializePeriodic} = require('./systems/periodicFunctions');
 const { delay } = require('./utils/delay');
 const {autoDeleter, isValid} = require('./systems/autoDeleter');
+const cooldownControl = require('./utils/cooldownControl');
 
 // Comandos
 const prefixes = config.prefixes;

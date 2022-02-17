@@ -31,7 +31,7 @@ const checkCooldown = require('./utils/cooldownControl').checkCooldown;
 const errors = require('./data/errors.js');
 const {initializePeriodic} = require('./systems/periodicFunctions');
 const { delay } = require('./utils/delay');
-const {autoDeleter} = require('./systems/autoDeleter');
+const {autoDeleter, isValid} = require('./systems/autoDeleter');
 
 // Comandos
 const prefixes = config.prefixes;
@@ -95,6 +95,11 @@ Client.on("messageCreate", async msg => {
         
         found = true;
         if (!((await checkArgs(command, args, msg)) && await checkCooldown(command, msg))) {
+            msg.delete().catch(err => console.log(err));
+            return;
+        }
+
+        if (!(await isValid(msg, command.name))) {
             msg.delete().catch(err => console.log(err));
             return;
         }

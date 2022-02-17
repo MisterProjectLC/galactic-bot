@@ -100,6 +100,7 @@ Client.on("messageCreate", async msg => {
         }
 
         if (!(await isValid(msg, command.name))) {
+            cooldownControl.resetCooldown(command, msg.author.id);
             msg.delete().catch(err => console.log(err));
             return;
         }

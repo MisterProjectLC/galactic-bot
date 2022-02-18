@@ -72,15 +72,26 @@ module.exports = {
             }
         }
 
-        let player = (await db.makeQuery(`SELECT bosses_left FROM players WHERE userid = $1`, [msg.author.id])).rows[0];
-        if (player.bosses_left < 1) {
-            cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply("You are out of conquests right now! Wait a bit before going on a conquest again.");
+        let players = (await db.makeQuery(`SELECT title, bosses_left, userid FROM players WHERE userid = ANY($1)`, [partyMembers])).rows;
+        let endit = false;
+        players.forEach(player => {
+            if (player.bosses_left < 1) {
+                msg.channel.send(`${player.title} is out of conquests right now! Wait a bit before going on a conquest again.`);
+                if (endit)
+                    return;
+
+                cooldownControl.resetCooldown(module.exports, msg.author.id);
+                endit = true;
+            }
+        });
+
+        if (endit)
             return;
-        } else {
-            msg.reply(`Conquests left: ${player.bosses_left-1}/${constants.bossesMax}. Regenerates one every ${constants.bossesCooldown} hours.`);
-            db.makeQuery(`UPDATE players SET bosses_left = bosses_left - 1 WHERE userid = $1`, [msg.author.id]);
-        }
+
+        players.forEach(player => {
+            msg.channel.send(`<@${player.userid}>, Conquests left: ${player.bosses_left-1}/${constants.bossesMax}. Regenerates one every ${constants.bossesCooldown} hours.`);
+            db.makeQuery(`UPDATE players SET bosses_left = bosses_left - 1 WHERE userid = $1`, [player.userid]);
+        });
 
         result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesConquests ON eEnemies.id = enemiesConquests.enemy_id 
         WHERE enemiesConquests.conquest_id = $1`, [bestMatch.id]);

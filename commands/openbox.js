@@ -5,8 +5,9 @@ const rewards = require('../systems/rewards')
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
 
-const emojiNumbers = ['1️⃣','2️⃣','3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
+const emojiNumbers = ['1️⃣','2️⃣','3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const COUNT_ITEMS = 3;
+const MAX_SIMULTANEOUS = 10;
 
 var boxes = {};
 
@@ -48,17 +49,19 @@ var openBox = async (gainItems, pkg, user) => {
 }
 
 
-var insertBox = (type, receiverID, msg) => {
+var insertBox = (type, receiverID, msg, amount = 1) => {
     if (!boxes.hasOwnProperty(receiverID))
         boxes[receiverID] = [];
-
-    if (boxes[receiverID].length >= 5) {
+    
+    let giftedAmount = Math.min(amount, MAX_SIMULTANEOUS - boxes[receiverID].length);
+    if (giftedAmount <= 0) {
         if (msg)
             msg.reply("The receiver already has too many boxes!");
         return;
     }
 
-    boxes[receiverID].push(type);
+    for (let i = 0; i < giftedAmount; i++)
+        boxes[receiverID].push(type);
 }
 
 var createEmbed = (boxList) => {

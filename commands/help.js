@@ -1,6 +1,6 @@
 const timeFormatter = require('../utils/timeFormatter').timeFormatter;
 const Discord = require('discord.js');
-const {isValid} = require('../systems/autoDeleter');
+const {asyncCollectionForEach} = require('../utils/asyncForEach');
 
 helpFormatting = (command) => {
     let embedResponse = new Discord.MessageEmbed()
@@ -42,7 +42,6 @@ completeList = (command_list) => {
     .setAuthor("Bot")
 	.setTitle(`Command help`)
     .setDescription(`For more details about a specific command, type \`#help <command-name>\`.`);
-    //.setThumbnail(`https://cdn.discordapp.com/attachments/690872764072067074/905221825078902875/logo_bracajour.png`);
 
     for (let category in command_list) {
         embed.addField(`**${category.toUpperCase()}:**`, `${lists[category]}`, false);
@@ -66,8 +65,9 @@ module.exports = {
         let requested_command = null;
         const { commands } = msg.client;
 
-        commands.forEach((command) => {
-            if (!command.permission(msg))
+        console.log(typeof commands);
+        await asyncCollectionForEach(commands, async (command) => {
+            if (!(await command.permission(msg)))
                 return;
 
             if (com_args[0] == command.name && requested_command === null)

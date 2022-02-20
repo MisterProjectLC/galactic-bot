@@ -5,8 +5,9 @@ const rewards = require('../systems/rewards')
 const saved_messages = require('../utils/saved_messages');
 const {deleteMessage} = require('../utils/deleteMessage');
 
-const emojiNumbers = ['1️⃣','2️⃣','3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
+const emojiNumbers = ['1️⃣','2️⃣','3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const COUNT_ITEMS = 3;
+const MAX_SIMULTANEOUS = 10;
 
 var boxes = {};
 
@@ -48,17 +49,19 @@ var openBox = async (gainItems, pkg, user) => {
 }
 
 
-var insertBox = (type, receiverID, msg) => {
+var insertBox = (type, receiverID, msg, amount = 1) => {
     if (!boxes.hasOwnProperty(receiverID))
         boxes[receiverID] = [];
-
-    if (boxes[receiverID].length >= 5) {
+    
+    let giftedAmount = Math.min(amount, MAX_SIMULTANEOUS - boxes[receiverID].length);
+    if (giftedAmount <= 0) {
         if (msg)
             msg.reply("The receiver already has too many boxes!");
         return;
     }
 
-    boxes[receiverID].push(type);
+    for (let i = 0; i < giftedAmount; i++)
+        boxes[receiverID].push(type);
 }
 
 var createEmbed = (boxList) => {
@@ -76,17 +79,24 @@ var createEmbed = (boxList) => {
     return embed;
 }
 
-var createRow = (boxList) => {
-    let row = new Discord.MessageActionRow();
-    for (let index = 0; index < emojiNumbers.length && index < boxList.length; index++)
-        row.addComponents(
-            new Discord.MessageButton()
-            .setCustomId(index.toString())
-            .setLabel(emojiNumbers[index])
-            .setStyle('PRIMARY'),
-        );
+var createRows = (boxList) => {
+    let rows = [];
 
-    return row;
+    for (let line = 0, count = 0; count < boxList.length; line++) {
+        let row = new Discord.MessageActionRow();
+
+        for (let index = 0; count < emojiNumbers.length && index < 4 && count < boxList.length; index++, count++)
+            row.addComponents(
+                new Discord.MessageButton()
+                .setCustomId(count.toString())
+                .setLabel(emojiNumbers[count])
+                .setStyle('PRIMARY'),
+            );
+
+        rows.push(row);
+    }
+
+    return rows;
 }
 
 // Exports
@@ -100,6 +110,7 @@ module.exports = {
     execute: async (com_args, msg) => {
         if (!boxes.hasOwnProperty(msg.author.id) || boxes[msg.author.id].length == 0) {
             msg.reply("You don't have any boxes...");
+            return;
         }
         let theirBoxes = boxes[msg.author.id];
 
@@ -110,7 +121,7 @@ module.exports = {
         }
         gifted = gifted.rows[0];
 
-        let m = await msg.reply({embeds: [createEmbed(theirBoxes)], components: [createRow(theirBoxes)]});
+        let m = await msg.reply({embeds: [createEmbed(theirBoxes)], components: createRows(theirBoxes)});
 
         let pkg = saved_messages.get_message('boxList', msg.author.id);
         if (pkg)
@@ -142,7 +153,7 @@ module.exports = {
         if (pkg.boxList.length <= 0)
             pkg.msg.delete().catch(err => console.log(err));
         else
-            pkg.msg.edit({embeds: [createEmbed(pkg.boxList)], components: [createRow(pkg.boxList)]}).catch(err => console.log(err));
+            pkg.msg.edit({embeds: [createEmbed(pkg.boxList)], components: [createRows(pkg.boxList)]}).catch(err => console.log(err));
         interaction.deferUpdate().catch(console.error);
     },
 

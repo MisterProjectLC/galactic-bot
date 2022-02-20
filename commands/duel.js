@@ -49,6 +49,12 @@ module.exports = {
             let parsed = parseInt(com_args[1]);
             if (parsed === parsed && parsed > 0)
                 bet = parsed;
+            else {
+                msg.reply(errors.invalidArgs);
+                msg.reply(errors.helpFormatting(module.exports));
+                return;
+            }
+
         }
 
         let challenger = await db.makeQuery(`SELECT title, coins, userid FROM players WHERE $1 ILIKE userID`, [msg.author.id]);

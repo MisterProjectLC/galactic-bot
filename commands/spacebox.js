@@ -7,6 +7,8 @@ const {insertBox} = require('./openbox');
 
 
 var giftBox = async (com_args, msg, Client, boxName, boxDescription) => {
+    let m = await msg.reply('Loading...');
+
     let giftedID = getUserIDFromMention(com_args[0]);
     if (giftedID === null) {
         msg.reply("Couldn't find the mentioned player...");
@@ -44,11 +46,10 @@ var giftBox = async (com_args, msg, Client, boxName, boxDescription) => {
     .setFooter("To open your boxes, go to the #SpaceBoxes channel and type #openbox");
 
     // Create summary message
-    msg.reply(amount > 1 ? "Boxes gifted." : "Box gifted.");
+    m.edit(amount > 1 ? "Boxes gifted." : "Box gifted.").catch(err => console.log(err));
     await member.send({embeds: [embed]}).catch(err => console.log(err));
-    insertBox(boxName, giftedID, msg);
+    insertBox(boxName, giftedID, msg, amount);
 }
-
 
 
 // Exports

@@ -174,7 +174,7 @@ var buyFromShop = async (com_args, msg) => {
         return;
     }
     
-    let m = await msg.reply(`Confirm purchase of ${purchaseAmount} Level(s) of ${item.title}? This will cost ${item.cost_per_level*purchaseAmount} coins.`);
+    let m = await msg.reply(`Confirm purchase of ${purchaseAmount} Level(s) of ${item.title}? This will cost ${item.cost_per_level*purchaseAmount} coins.`).catch(err => console.log(err));
     m.react('✅');
     m.react('❌');
     saved_messages.add_message('confirmPurchase', m.id, {item: item, purchaseAmount: purchaseAmount, msg: msg, isWeapon: (shopIndex < weapons.length)});

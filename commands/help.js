@@ -1,6 +1,6 @@
 const timeFormatter = require('../utils/timeFormatter').timeFormatter;
 const Discord = require('discord.js');
-const {asyncForEach} = require('../utils/asyncForEach');
+const {asyncCollectionForEach} = require('../utils/asyncForEach');
 
 helpFormatting = (command) => {
     let embedResponse = new Discord.MessageEmbed()
@@ -66,7 +66,7 @@ module.exports = {
         const { commands } = msg.client;
 
         console.log(typeof commands);
-        await asyncForEach(commands, async (command) => {
+        await asyncCollectionForEach(commands, async (command) => {
             if (!(await command.permission(msg)))
                 return;
 

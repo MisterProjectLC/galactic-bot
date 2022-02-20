@@ -33,7 +33,6 @@ var refreshAdventures = () => {
 
         rows.forEach(row => {
             let member = memberList.find(member => {return member.user.id == row.userid});
-            console.log("one recharge");
             if (member != undefined)
                 member.user.send(`You have just recharged an adventure!`).catch(err => console.log(err));
         });
@@ -42,7 +41,6 @@ var refreshAdventures = () => {
 
         rows.forEach(row => {
             let member = memberList.find(member => {return member.user.id == row.userid});
-            console.log("all recharge");
             if (member != undefined)
                 member.user.send(`You have just recharged all of your adventures!`).catch(err => console.log(err));
         });
@@ -55,6 +53,24 @@ var refreshAdventures = () => {
 
 var refreshBosses = () => {
     refresh('bosses', async () => {
+        let rows = (await db.makeQuery(`SELECT userid FROM players WHERE bosses_left = 0`)).rows;
+        let memberList = await fetchMembers(Client);
+        console.log(memberList);
+
+        rows.forEach(row => {
+            let member = memberList.find(member => {return member.user.id == row.userid});
+            if (member != undefined)
+                member.user.send(`You have just recharged a conquest!`).catch(err => console.log(err));
+        });
+
+        rows = (await db.makeQuery(`SELECT userid FROM players WHERE bosses_left = $1`, [constants.bossesMax-1])).rows;
+
+        rows.forEach(row => {
+            let member = memberList.find(member => {return member.user.id == row.userid});
+            if (member != undefined)
+                member.user.send(`You have just recharged all of your conquests!`).catch(err => console.log(err));
+        });
+
         db.makeQuery(`UPDATE players SET bosses_left = bosses_left + 1 WHERE bosses_left < $1`, [constants.bossesMax]);
     });
     setTimeout(refreshAdventures, 60 * 60 * 1000);

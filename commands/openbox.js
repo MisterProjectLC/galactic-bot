@@ -24,6 +24,8 @@ var openBox = async (gainItems, pkg, user) => {
     .setColor(0x1d51cc)
     .setTitle(`Contents`);
 
+    let coins = (Math.floor(pkg.gifted.level/10)+1)*50;
+
     if (gainItems) {
         for (let i = 0; i < COUNT_ITEMS; i++) {
             let rand = Math.floor(Math.random()*(weapons.length+armors.length));
@@ -40,8 +42,9 @@ var openBox = async (gainItems, pkg, user) => {
 
             embed.addField(`${title}`, `${amount} Levels`, true);
         }
+    } else {
+        coins *= 3;
     }
-    let coins = (Math.floor(pkg.gifted.level/10)+1)*50;
     embed.addField(`Coins`, `${coins} Coins`, true);
 
     pkg.msg.channel.send({embeds: [embed]});

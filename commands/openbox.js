@@ -43,7 +43,7 @@ var openBox = async (gainItems, pkg, user) => {
             embed.addField(`${title}`, `${amount} Levels`, true);
         }
     } else {
-        coins *= 3;
+        coins *= 13;
     }
     embed.addField(`Coins`, `${coins} Coins`, true);
 

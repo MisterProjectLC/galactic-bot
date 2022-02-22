@@ -6,6 +6,9 @@ const compareTwoStrings = require('string-similarity').compareTwoStrings;
 const saved_messages = require('../utils/saved_messages');
 const party = require('./party');
 const constants = require('../data/constants');
+const {getTimeLeft} = require('../systems/periodicFunctions');
+const {asyncForEach} = require('../utils/asyncForEach');
+const {timeFormatter} = require('../utils/timeFormatter');
 
 // Exports
 module.exports = {
@@ -62,21 +65,22 @@ module.exports = {
             return;
         }
 
+        let players = result.rows;
+
         for (let i = 0; i < result.rowCount; i++) {
             console.log(result.rows[i].level);
             console.log(bestMatch.min_level);
             if (result.rows[i].level < bestMatch.min_level) {
                 cooldownControl.resetCooldown(module.exports, msg.author.id);
-                msg.reply("Someone in your party doesn't have enough levels to participate in this conquest...");
+                msg.reply(`${result.rows[i].title} doesn't have enough levels to participate in this conquest...`);
                 return;
             }
         }
 
-        let players = (await db.makeQuery(`SELECT title, bosses_left, userid FROM players WHERE userid = ANY($1)`, [partyMembers])).rows;
         let endit = false;
-        players.forEach(player => {
+        await asyncForEach(players, async player => {
             if (player.bosses_left < 1) {
-                msg.channel.send(`${player.title} is out of conquests right now! Wait a bit before going on a conquest again.`);
+                msg.channel.send(`${player.title} is out of conquests right now! Wait ${timeFormatter(await getTimeLeft("bosses"))} before going on a conquest again.`);
                 if (endit)
                     return;
 
@@ -88,8 +92,8 @@ module.exports = {
         if (endit)
             return;
 
-        players.forEach(player => {
-            msg.channel.send(`<@${player.userid}>, Conquests left: ${player.bosses_left-1}/${constants.bossesMax}. Regenerates one every ${constants.bossesCooldown} hours.`);
+        await asyncForEach(players, async player => {
+            msg.channel.send(`<@${player.userid}>, Conquests left: ${player.bosses_left-1}/${constants.bossesMax}. Next regeneration in ${timeFormatter(await getTimeLeft("bosses"))}.`);
             db.makeQuery(`UPDATE players SET bosses_left = bosses_left - 1 WHERE userid = $1`, [player.userid]);
         });
 

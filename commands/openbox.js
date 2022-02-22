@@ -12,6 +12,15 @@ const MAX_SIMULTANEOUS = 10;
 var boxes = {};
 
 
+var initialize = async () => {
+    let result = await db.makeQuery(`SELECT userid, spaceboxes, coinboxes FROM players`);
+    result.rows.forEach(row => {
+        insertBox("Spacebox", row.userid, null, row.spaceboxes);
+        insertBox("Coinbox", row.userid, null, row.coinboxes);
+    });
+}
+
+
 var openBox = async (gainItems, pkg, user) => {
     let itemLevel = Math.max(1, 10+ Math.floor((pkg.gifted.level- 10)/20)*20);
     console.log(itemLevel);
@@ -42,8 +51,10 @@ var openBox = async (gainItems, pkg, user) => {
 
             embed.addField(`${title}`, `${amount} Levels`, true);
         }
+        db.makeQuery(`UPDATE players SET spaceboxes = spaceboxes - 1 WHERE $1 ILIKE userID`, [user.id]);
     } else {
         coins *= 13;
+        db.makeQuery(`UPDATE players SET coinboxes = coinboxes - 1 WHERE $1 ILIKE userID`, [user.id]);
     }
     embed.addField(`Coins`, `${coins} Coins`, true);
 
@@ -61,6 +72,13 @@ var insertBox = (type, receiverID, msg, amount = 1) => {
         if (msg)
             msg.reply("The receiver already has too many boxes!");
         return;
+    }
+
+    if (msg) {
+        if (type == "Spacebox")
+            db.makeQuery(`UPDATE players SET spaceboxes = spaceboxes + $2 WHERE $1 ILIKE userID`, [receiverID, giftedAmount]);
+        else if (type == "Coinbox")
+            db.makeQuery(`UPDATE players SET coinboxes = coinboxes + $2 WHERE $1 ILIKE userID`, [receiverID, giftedAmount]);
     }
 
     for (let i = 0; i < giftedAmount; i++)
@@ -110,6 +128,7 @@ module.exports = {
     examples: ["#openbox: shows the list of boxes to open."],
     min: 0, max: 0, cooldown: 0,
     insertBox: insertBox,
+    initialize: initialize,
     execute: async (com_args, msg) => {
         if (!boxes.hasOwnProperty(msg.author.id) || boxes[msg.author.id].length == 0) {
             msg.reply("You don't have any boxes...");
@@ -156,7 +175,7 @@ module.exports = {
         if (pkg.boxList.length <= 0)
             pkg.msg.delete().catch(err => console.log(err));
         else
-            pkg.msg.edit({embeds: [createEmbed(pkg.boxList)], components: [createRows(pkg.boxList)]}).catch(err => console.log(err));
+            pkg.msg.edit({embeds: [createEmbed(pkg.boxList)], components: createRows(pkg.boxList)}).catch(err => console.log(err));
         interaction.deferUpdate().catch(console.error);
     },
 

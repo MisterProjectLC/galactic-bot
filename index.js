@@ -29,6 +29,7 @@ const checkCommand = require('./utils/checkCommand.js').checkCommand;
 const checkArgs = require('./utils/checkArgs.js').checkArgs;
 const checkCooldown = require('./utils/cooldownControl').checkCooldown;
 const errors = require('./data/errors.js');
+const {initialize} = require('./commands/openbox');
 const {initializePeriodic} = require('./systems/periodicFunctions');
 const { delay } = require('./utils/delay');
 const {autoDeleter, isValid} = require('./systems/autoDeleter');
@@ -155,3 +156,4 @@ Client.on('interactionCreate', interaction => {
 
 Client.login(token);
 initializePeriodic(Client);
+initialize();

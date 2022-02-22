@@ -1,5 +1,6 @@
 const db = require('../external/database.js');
 const {delay} = require('../utils/delay');
+const config = require('../data/config');
 const constants = require('../data/constants');
 const rewards = require('../systems/rewards');
 const {asyncForEach} = require('../utils/asyncForEach');
@@ -22,6 +23,15 @@ var refresh = async (name, callback) => {
     time.setUTCHours(time.getUTCHours()+constants.adventuresCooldown);
     db.makeQuery('UPDATE timers SET time = $2 WHERE title = $1', [name, time]);
     console.log("Refresh " + name);
+}
+
+
+var getTimeLeft = async (name) => {
+    let result = await db.makeQuery('SELECT time FROM timers WHERE title = $1', [name]);
+    if (result.rowCount == 0)
+        return;
+
+    return (result.rows[0].time.getTime() - new Date().getTime())/1000;
 }
 
 
@@ -206,11 +216,14 @@ var spaceClubUpdate = async () => {
 var initializePeriodic = async (client) => {
     Client = client;
     await delay(10*1000);
-    setTimeout(refreshAdventures, 1000);
-    setTimeout(refreshBosses, 1000);
-    setTimeout(rotatingShop, 1000);
-    setTimeout(updateLeaderboard, 1000);
-    setTimeout(spaceClubUpdate, 1000);
+    if (!config.teste) {
+        setTimeout(refreshAdventures, 1000);
+        setTimeout(refreshBosses, 1000);
+        setTimeout(rotatingShop, 1000);
+        setTimeout(updateLeaderboard, 1000);
+        setTimeout(spaceClubUpdate, 1000);
+    }
 }
 
 module.exports.initializePeriodic = initializePeriodic;
+module.exports.getTimeLeft = getTimeLeft;

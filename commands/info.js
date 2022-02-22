@@ -97,7 +97,9 @@ module.exports = {
         .setThumbnail(player.imageurl)
         .addField('Level', `${player.level}`, true)
         .addField('XP', `${player.xp}/${xpThreshold(player.level)}`, true)
-        .addField('Coins', `${player.coins}`, true);
+        .addField('Coins', `${player.coins}`, true)
+        .addField('Coinboxes', `${player.coinboxes}`, true)
+        .addField('Spaceboxes', `${player.spaceboxes}`, true);
 
         msg.reply({ embeds: [embed] });
 

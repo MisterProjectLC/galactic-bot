@@ -4,6 +4,8 @@ const encounter = require('../systems/enemyEncounter');
 const cooldownControl = require('../utils/cooldownControl');
 const compareTwoStrings = require('string-similarity').compareTwoStrings;
 const constants = require('../data/constants');
+const {getTimeLeft} = require('../systems/periodicFunctions');
+const {timeFormatter} = require('../utils/timeFormatter');
 
 // Exports
 module.exports = {
@@ -55,10 +57,10 @@ module.exports = {
 
         if (player.adventures_left < 1) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply("You are out of adventures right now! Wait a bit before going on an adventure again.");
+            msg.reply(`You are out of adventures right now! Wait ${timeFormatter(await getTimeLeft("adventures"))} before going on an adventure again.`);
             return;
         } else {
-            msg.reply(`Adventures left: ${player.adventures_left-1}/${constants.adventuresMax}. Regenerates one every ${constants.adventuresCooldown} hours.`);
+            msg.reply(`Adventures left: ${player.adventures_left-1}/${constants.adventuresMax}. Next regeneration in ${timeFormatter(await getTimeLeft("adventures"))}.`);
             db.makeQuery(`UPDATE players SET adventures_left = adventures_left - 1 WHERE userid = $1`, [msg.author.id]);
         }
 

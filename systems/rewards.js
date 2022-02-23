@@ -3,7 +3,7 @@ const errors = require('../data/errors');
 const cooldownControl = require('../utils/cooldownControl');
 
 var xpThreshold = (level) => {
-    return Math.round(1000 * Math.pow(1.03, level-1));
+    return Math.round(1000 * Math.pow(1.035, level-1));
 }
 
 var giveXP = async (userID, xp, channel, command) => {

@@ -31,7 +31,10 @@ var getTimeLeft = async (name) => {
     if (result.rowCount == 0)
         return;
 
-    return (result.rows[0].time.getTime() - new Date().getTime())/1000;
+    if (result.rows[0].time.getTime() > new Date().getTime())
+        return (result.rows[0].time.getTime() - new Date().getTime())/1000;
+    else
+        return 3600;
 }
 
 
@@ -83,7 +86,7 @@ var refreshBosses = () => {
 
         db.makeQuery(`UPDATE players SET bosses_left = bosses_left + 1 WHERE bosses_left < $1`, [constants.bossesMax]);
     });
-    setTimeout(refreshAdventures, 60 * 60 * 1000);
+    setTimeout(refreshBosses, 60 * 60 * 1000);
 }
 
 

@@ -164,7 +164,7 @@ module.exports = {
         // Activate buttons
         let customId = interaction.customId;
         let objectNumber = parseInt(customId);
-        if (pkg.boxList.length <= objectNumber)
+        if (objectNumber !== objectNumber || pkg.boxList.length <= objectNumber)
             return;
 
         let selectedBox = pkg.boxList[objectNumber];

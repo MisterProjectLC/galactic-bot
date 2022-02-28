@@ -68,11 +68,12 @@ module.exports = {
         let players = result.rows;
 
         for (let i = 0; i < result.rowCount; i++) {
-            console.log(result.rows[i].level);
-            console.log(bestMatch.min_level);
+            if (result.rows[i].userid != msg.author.id)
+                continue;
+
             if (result.rows[i].level < bestMatch.min_level) {
                 cooldownControl.resetCooldown(module.exports, msg.author.id);
-                msg.reply(`${result.rows[i].title} doesn't have enough levels to participate in this conquest...`);
+                msg.reply(`You don't have enough levels to host this conquest...`);
                 return;
             }
         }

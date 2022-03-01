@@ -1,10 +1,11 @@
 const {Pool, Client} = require('pg');
+const config = require('../data/config');
 
 const pg_client = new Pool({
-    user: 'eboecrpdooyjxt',
-    host: 'ec2-3-209-234-80.compute-1.amazonaws.com',
-    database: 'd5qpsaj2npb22k',
-    password: '6e4d4d29dc363de94bbd702d5f78e9744018746305f8304b26bc731c3e3f8dfb',
+    user: config.user,
+    host: config.host,
+    database: config.database,
+    password: config.password,
     port: 5432,
     ssl: { rejectUnauthorized: false },
     idleTimeoutMillis: 40000,

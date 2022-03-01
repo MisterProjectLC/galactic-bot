@@ -7,6 +7,10 @@ var xpThreshold = (level) => {
 }
 
 var giveXP = async (userID, xp, channel, command) => {
+    if (xp == 0)
+        return;
+
+
     await db.makeQuery(`SELECT xp, level FROM players WHERE userid = $1`, [userID]).then(async result => {
         if (result.rowCount < 1) {
             channel.send(`<@${userID}>, ` + errors.unregisteredPlayer);
@@ -53,6 +57,9 @@ var giveXP = async (userID, xp, channel, command) => {
 
 
 var giveLevels = async (userID, levels, channel, command) => {
+    if (levels == 0)
+        return;
+
     await db.makeQuery(`SELECT xp, level FROM players WHERE userid = $1`, [userID]).then(async result => {
         if (result.rowCount < 1) {
             if (channel)

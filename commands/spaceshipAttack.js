@@ -37,7 +37,7 @@ module.exports = {
     nicknames: ["spaceship", "attack"],
     category: "Event",
     description: "Admin only. Begins a Spaceship Attack Event.", 
-    details: ["This event lasts one day. Every 4 hours, a new wave appears, increasing in difficulty.",
+    details: ["Every 10 minutes, a new wave appears, increasing in difficulty.",
     `Waves consist of ${BATTLE_SIZE} players vs ${BATTLE_SIZE} enemies battles, and only start when all ${BATTLE_SIZE} slots are filled.`],
     min: 0, max: 0, cooldown: 900,
     execute: async (com_args, msg) => {
@@ -62,12 +62,12 @@ module.exports = {
             m.react('✅');
             saved_messages.add_message('defenseParty', this_id, {members: [], msg: m, adventure: adventureList[i]});
 
-            await delay(1000 * 60 * 5);
-            let time_awaiting = 5;
+            await delay(1000 * 60 * 10);
+            let time_awaiting = 2;
             while (saved_messages.get_message('defenseParty', this_id) != null) {
                 let ms = await msg.channel.send("The next wave can't be fought until this one is dealt with!");
                 await delay(1000 * 60 * time_awaiting);
-                time_awaiting += 1;
+                time_awaiting += 2;
                 ms.delete().catch(err => console.log(err));
             }
         }
@@ -92,7 +92,7 @@ module.exports = {
 
         if (emoji !== '✅')
             return;
-                   
+        
         // Modify
         if (added) {
             if (pkg.members.length < BATTLE_SIZE)

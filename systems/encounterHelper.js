@@ -5,8 +5,8 @@ const battle = require('../systems/battle');
 const {capitalize} = require('../utils/capitalize');
 //const saved_messages = require('../utils/saved_messages');
 
-const emojiNumbers = ['🇦','🇧','🇨'];
-const letters = ['A', 'B', 'C'];
+const emojiNumbers = ['🇦','🇧','🇨','🇩','🇪','🇫','🇬'];
+const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 
 let generatePlayer = (player) => {
@@ -34,8 +34,7 @@ let buildWeaponLine = (weapon) => {
 
 let buildArmorLine = (armor) => {
     return `${armor.health*armor.level} HP, ${armor.shield*armor.level} Shields, ${armor.plate*armor.level} Plate, ` +
-    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion, Resistant to Effect: ${armor.effect_title !== null ? 
-        capitalize(armor.effect_title) : "None"}`;
+    `${armor.regen*armor.level} Regen, ${armor.evasion*armor.level} Evasion`;
 };
 
 let buildListMessage = async (msg, user, playerTitle, title, description, list, lineBuilder, min, max, selected = [], errorChannel) => {
@@ -54,28 +53,41 @@ let buildListMessage = async (msg, user, playerTitle, title, description, list, 
             return;
     }
 
+    let components = [];
+
+    for (let line = 0, index = 0; index < emojiNumbers.length-1; line++) {
+        let row = new Discord.MessageActionRow();
+        for (let column = 0; column < 3 && index < emojiNumbers.length-1; column++, index++) {
+            row.addComponents(
+                new Discord.MessageButton()
+                .setCustomId(index.toString())
+                .setLabel(emojiNumbers[index])
+                .setStyle('PRIMARY'),
+            );
+        }
+        components.push(row);
+    }
+
     let row = new Discord.MessageActionRow()
     .addComponents(
-        new Discord.MessageButton()
-        .setCustomId('left')
-        .setLabel('◀️')
-        .setStyle('PRIMARY'),
-    );
-
-    for (let index = 0; index < emojiNumbers.length; index++)
-        row.addComponents(
             new Discord.MessageButton()
-            .setCustomId(index.toString())
-            .setLabel(emojiNumbers[index])
+            .setCustomId('left')
+            .setLabel('◀️')
             .setStyle('PRIMARY'),
-        );
-
-    row.addComponents(
+    )
+    .addComponents(
+        new Discord.MessageButton()
+        .setCustomId((emojiNumbers.length-1).toString())
+        .setLabel(emojiNumbers[(emojiNumbers.length-1)])
+        .setStyle('PRIMARY'),
+    )
+    .addComponents(
         new Discord.MessageButton()
         .setCustomId('right')
         .setLabel('▶️')
         .setStyle('PRIMARY'),
     );
+    components.push(row);
 
     for (let index = Math.max(min, 0); index < Math.min(max, list.length); index++) {
         let selected_text = selected.includes(index) ? 'SELECTED' : '';
@@ -84,7 +96,7 @@ let buildListMessage = async (msg, user, playerTitle, title, description, list, 
     }
 
     // Add message
-    msg.edit({embeds: [embed], components: [row]});
+    msg.edit({embeds: [embed], components: components});
     return msg;
 };
 

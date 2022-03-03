@@ -5,8 +5,8 @@ const saved_messages = require('../utils/saved_messages');
 
 // Exports
 module.exports = {
-    name: "removeArmor",
-    nicknames: ["removearmor"],
+    name: "removearmor",
+    nicknames: ["removeArmor"],
     category: "General",
     description: " Removes one of your armors.", 
     examples: ["#removearmor 10: removes your 10th armor (according to your profile in #info)."],

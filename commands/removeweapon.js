@@ -5,8 +5,8 @@ const saved_messages = require('../utils/saved_messages');
 
 // Exports
 module.exports = {
-    name: "removeWeapon",
-    nicknames: ["removeweapon"],
+    name: "removeweapon",
+    nicknames: ["removeWeapon"],
     category: "General",
     description: " Removes one of your weapons.", 
     examples: ["#removeweapon 10: removes your 10th weapon (according to your profile in #info)."],

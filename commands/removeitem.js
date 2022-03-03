@@ -1,4 +1,3 @@
-const shop = require('./shop');
 const db = require('../external/database.js');
 const errors = require('../data/errors');
 const {getUserIDFromMention} = require('../utils/getUserIDFromMention');
@@ -64,10 +63,6 @@ module.exports = {
         }
 
         msg.reply(`Removed ${item.title} from ${gifted.rows[0].title}.`);
-    },
-
-    reaction: async (reaction, user) => {
-        shop.reaction(reaction, user);
     },
     permission: async (msg) => msg.member.roles.cache.some(role => role.name.toLowerCase() == "founder")
 };

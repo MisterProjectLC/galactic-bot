@@ -5,7 +5,7 @@ const {delay} = require('../utils/delay');
 const {deleteMessage} = require('../utils/deleteMessage');
 const Discord = require('discord.js');
 
-const BATTLE_SIZE = 5;
+const BATTLE_SIZE = 2;
 
 var createPartyEmbed = async (members, unorderedRows, partySize, minLevel) => {
     let titles = [];
@@ -38,7 +38,7 @@ module.exports = {
     category: "Event",
     description: "Admin only. Begins a Spaceship Attack Event.", 
     details: ["This event lasts one day. Every 4 hours, a new wave appears, increasing in difficulty.",
-    "Waves consist of 12 players vs 12 enemies battles, and only start when all 12 slots are filled."],
+    `Waves consist of ${BATTLE_SIZE} players vs ${BATTLE_SIZE} enemies battles, and only start when all ${BATTLE_SIZE} slots are filled.`],
     min: 0, max: 0, cooldown: 900,
     execute: async (com_args, msg) => {
         let adventureList = (await db.makeQuery(`SELECT * FROM adventures`)).rows;

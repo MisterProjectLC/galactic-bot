@@ -18,7 +18,7 @@ module.exports = {
     description: "Take part in a conquest - basically a harder and more intensive adventure. Requires a #party.",
     examples: ["#conquest Andor: Take part in the 'Andor' mission."],
     details: ['Check the list of conquests with #conquests.'],
-    min: 0, max: 5, cooldown: 300, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
+    min: 0, max: 5, cooldown: 30, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
     execute: async (com_args, msg) => {
         let bestMatch = {};
         let bestScore = 0;

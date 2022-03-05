@@ -1,4 +1,5 @@
 const db = require('../external/database.js');
+const { delay } = require('../utils/delay.js');
 
 const CACHE_LIMIT = 5000;
 
@@ -49,9 +50,18 @@ module.exports.isValid = async (msg, commandName) => {
         console.log(channelCache);
     }
 
-    /*if (!(channelCache.hasOwnProperty(msg.guildId) && channelCache[msg.guildId].hasOwnProperty(commandName) 
-        && channelCache[msg.guildId][commandName].includes(msg.channel.id)) && !channelCommands.includes(commandName))
-        return false;*/
+    if (!(channelCache.hasOwnProperty(msg.guildId) && channelCache[msg.guildId].hasOwnProperty(commandName) 
+        && channelCache[msg.guildId][commandName].includes(msg.channel.id)) && !channelCommands.includes(commandName)) {
+        let channels = await msg.guild.channels.fetch();
+        let commandChannelList = channels.get(channelCache[msg.guildId][commandName]);
+        let firstPermittedChannel = commandChannelList ? commandChannelList[0] : null;
+        
+        let tryIn = firstPermittedChannel ? `Try in #${firstPermittedChannel.name} instead!` : "";
+        let m = await msg.reply(`You may not use this command this in this channel!` + tryIn);
+        await delay(2*1000);
+        m.delete().catch(err => console.log(err));
+        return false;
+    }
 
     return true;
 }

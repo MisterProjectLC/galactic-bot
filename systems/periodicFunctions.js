@@ -90,6 +90,34 @@ var refreshBosses = () => {
 }
 
 
+var notifyRewards = async () => {
+    let memberList = await fetchMembers(Client);
+
+    let rows = (await db.makeQuery(`SELECT userid FROM players WHERE (next_daily IS NULL OR next_daily < $1) AND daily_notified = false`, [new Date()])).rows;
+    let userids = [];
+    rows.forEach(row => {
+        userids.push(row.userid);
+        let member = memberList.find(member => {return member.user.id == row.userid});
+        if (member != undefined)
+            member.user.send(`You can collect your daily reward again!`).catch(err => console.log(err));
+    });
+    db.makeQuery(`UPDATE players SET daily_notified = true WHERE userid = ANY($1)`, [userids]);
+
+    rows = (await db.makeQuery(`SELECT userid FROM players WHERE (next_weekly IS NULL OR next_weekly < $1) AND weekly_notified = false`, [new Date()])).rows;
+    userids = [];
+    rows.forEach(row => {
+        userids.push(row.userid);
+        db.makeQuery(`UPDATE players SET weekly_notified = true`);
+        let member = memberList.find(member => {return member.user.id == row.userid});
+        if (member != undefined)
+            member.user.send(`You can collect your weekly reward again!`).catch(err => console.log(err));
+    });
+    db.makeQuery(`UPDATE players SET daily_notified = true WHERE userid = ANY($1)`, [userids]);
+
+    setTimeout(notifyRewards, 60 * 1000);
+}
+
+
 const AVAILABLE_ITEMS_PER_DAY = 3;
 var makeAvailable = async (items, tableName) => {
     // Separate items into tiers
@@ -226,6 +254,7 @@ var initializePeriodic = async (client) => {
         setTimeout(updateLeaderboard, 1000);
         setTimeout(spaceClubUpdate, 1000);
     }
+    setTimeout(notifyRewards, 1000);
 }
 
 module.exports.initializePeriodic = initializePeriodic;

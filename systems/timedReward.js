@@ -6,7 +6,10 @@ const {delay} = require('../utils/delay');
 const {timeFormatter} = require('../utils/timeFormatter');
 
 // Exports
-module.exports.timedReward = async (next_what, reward, waitHours, user, member, channel) => {
+module.exports.timedReward = async (name, reward, waitHours, user, member, channel) => {
+    let next_what = "next_" + name;
+    let what_notified = name + "_notified";
+
     let result = await db.makeQuery(`SELECT ${next_what} FROM players WHERE userid = $1`, [user.id]);
     if (result.rowCount < 1) {
         await user.send(errors.unregisteredPlayer).catch(async err => {
@@ -32,6 +35,6 @@ module.exports.timedReward = async (next_what, reward, waitHours, user, member, 
 
     let time = new Date();
     time.setUTCHours(time.getUTCHours()+waitHours);
-    db.makeQuery(`UPDATE players SET title = $2, imageURL = $3, ${next_what} = $4 WHERE userid = $1`, 
+    db.makeQuery(`UPDATE players SET title = $2, imageURL = $3, ${next_what} = $4, ${what_notified} = false WHERE userid = $1`, 
         [user.id, member.displayName, user.avatarURL(), time]);
 } 

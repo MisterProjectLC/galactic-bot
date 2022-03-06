@@ -52,10 +52,10 @@ module.exports = {
 
         let customId = interaction.customId;
         if (customId === "daily") {
-            timedReward('next_daily', 100, 24, user, member, msg.channel);
+            timedReward('daily', 100, 24, user, member, msg.channel);
         }
         else if (customId === "weekly") {
-            timedReward('next_weekly', 500, 24*7, user, member, msg.channel);
+            timedReward('weekly', 500, 24*7, user, member, msg.channel);
         }
         else
             return;

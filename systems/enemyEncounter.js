@@ -83,7 +83,7 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
         players: players, enemies: enemyInfosInGame, enemiesInReserve: enemyInfos, maxEnemies: maxEnemies, cancellable: cancellable, msg: mainMsg});
     
     // Cleanup messages
-    await delay(1000*command.cooldown);
+    await delay(1000*60*5);
     if (saved_messages.get_message(command.name+'Main', mainMsg.id) != null)
         cleanup(saved_messages.get_message(command.name+'Main', mainMsg.id), command.name);
 };

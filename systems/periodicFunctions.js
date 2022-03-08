@@ -40,6 +40,8 @@ var getTimeLeft = async (name) => {
 
 var refreshAdventures = () => {
     refresh('adventures', async () => {
+        await db.makeQuery(`UPDATE players SET adventures_left = 0 WHERE adventures_left < 0`);
+
         let rows = (await db.makeQuery(`SELECT userid FROM players WHERE adventures_left = 0`)).rows;
         let memberList = await fetchMembers(Client);
         console.log(memberList);

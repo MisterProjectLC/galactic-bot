@@ -47,7 +47,7 @@ module.exports = {
         let introEmbed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
         .setTitle(`Attention, all travelers!`)
-        .setDescription(`The spaceship hull HAS BEEN BREACHED. Today, every 4 hours, a wave of increasingly stronger enemies will enter into the breach and try to attack us! Stop them!`);
+        .setDescription(`The spaceship hull HAS BEEN BREACHED. Today, every 15 minutes, a wave of increasingly stronger enemies will enter into the breach and try to attack us! Stop them!`);
         await msg.channel.send({embeds: [introEmbed]});
 
         // Each adventure

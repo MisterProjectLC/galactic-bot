@@ -5,7 +5,8 @@ const {delay} = require('../utils/delay');
 const {deleteMessage} = require('../utils/deleteMessage');
 const Discord = require('discord.js');
 
-const BATTLE_SIZE = 8;
+const BATTLE_SIZE = 1;
+const WAIT_TIME = 1;
 
 var createPartyEmbed = async (members, unorderedRows, partySize, minLevel) => {
     let titles = [];
@@ -62,8 +63,8 @@ module.exports = {
             m.react('✅');
             saved_messages.add_message('defenseParty', this_id, {members: [], msg: m, adventure: adventureList[i]});
 
-            await delay(1000 * 60 * 15);
-            let time_awaiting = 2;
+            await delay(1000 * 60 * WAIT_TIME);
+            let time_awaiting = WAIT_TIME;
             while (saved_messages.get_message('defenseParty', this_id) != null) {
                 let ms = await msg.channel.send("The next wave can't be fought until this one is dealt with!");
                 await delay(1000 * 60 * time_awaiting);
@@ -113,7 +114,7 @@ module.exports = {
             for (let i = 0; i < (BATTLE_SIZE/3)+1; i++)
                 result.rows.forEach(row => enemyList.push(row));
             await encounter.generateEnemyEncounter(pkg.adventure.title.substring(0, pkg.adventure.title.length-10) + " Invasion", msg, 
-                module.exports, pkg.members, enemyList, false, BATTLE_SIZE, BATTLE_SIZE);
+                module.exports, pkg.members, enemyList, false, BATTLE_SIZE, BATTLE_SIZE, 240);
         }
         
         // Update

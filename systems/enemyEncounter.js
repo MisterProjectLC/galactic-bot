@@ -49,7 +49,7 @@ var generateEnemyEmbed = (title, maxEnemies, cancellable, enemyInfos, enemyInfos
 }
 
 
-var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, cancellable, maxEnemies = 1, initialEnemies = 1) => {
+var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, cancellable, maxEnemies = 1, initialEnemies = 1, delete_delay = 5) => {
     // Players + Create weapons/armor messages
     let players = await generatePlayerInfos(playerIDs, msg);
 
@@ -83,7 +83,7 @@ var generateEnemyEncounter = async (title, msg, command, playerIDs, enemyInfos, 
         players: players, enemies: enemyInfosInGame, enemiesInReserve: enemyInfos, maxEnemies: maxEnemies, cancellable: cancellable, msg: mainMsg});
     
     // Cleanup messages
-    await delay(1000*60*5);
+    await delay(1000*60*delete_delay);
     if (saved_messages.get_message(command.name+'Main', mainMsg.id) != null)
         cleanup(saved_messages.get_message(command.name+'Main', mainMsg.id), command.name);
 };

@@ -171,5 +171,5 @@ CREATE TABLE commandChannels (
 	title text,
 	guild_id text,
 	channel_id text,
-	PRIMARY KEY(guild_id, title)
+	PRIMARY KEY(channel_id, guild_id, title)
 );

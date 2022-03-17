@@ -5,8 +5,8 @@ const {delay} = require('../utils/delay');
 const {deleteMessage} = require('../utils/deleteMessage');
 const Discord = require('discord.js');
 
-const BATTLE_SIZE = 1;
-const WAIT_TIME = 1;
+const BATTLE_SIZE = 8;
+const WAIT_TIME = 15;
 
 var createPartyEmbed = async (members, unorderedRows, partySize, minLevel) => {
     let titles = [];

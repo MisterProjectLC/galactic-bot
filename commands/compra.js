@@ -3,12 +3,12 @@ const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
-    name: "buy",
-    nicknames: ["purchase"],
-    category: "Shop",
-    description: "Buy/upgrade equipment.", 
-    examples: ["#buy 10: buy/upgrade the 10th equipment in the shop.",
-    "#buy 5 3: buy 3 levels of the 5th equipment in the shop."],
+    name: "compra",
+    nicknames: ["comprar"],
+    category: "Loja",
+    description: "Compra/aprimora equipamento.", 
+    examples: ["#compra 10: compra/aprimora o décimo equipamento da loja.",
+    "#compra 5 3: compra 3 níveis do quinto equipamento da loja."],
     min: 1, max: 2, cooldown: 2,
     execute: async (com_args, msg) => {
         shop.buyFromShop(com_args, msg);

@@ -6,24 +6,24 @@ helpFormatting = (command) => {
     let embedResponse = new Discord.MessageEmbed()
 	.setColor(0x1d51cc)
 	.setAuthor("Bot")
-	.setTitle(`Command details of '${command.name}'`)
-	.addField(`Name:`, `\`\`\`${command.name}\`\`\``, true);
+	.setTitle(`Detalhes do comando '${command.name}'`)
+	.addField(`Nome:`, `\`\`\`${command.name}\`\`\``, true);
     //.setThumbnail(`https://cdn.discordapp.com/attachments/690872764072067074/905221825078902875/logo_bracajour.png`);
 
     if (command.nicknames != null)
-	    embedResponse = embedResponse.addField(`Nicknames:`, `\`\`\`${command.nicknames.join(", ")}\`\`\``, true);
+	    embedResponse = embedResponse.addField(`Apelidos:`, `\`\`\`${command.nicknames.join(", ")}\`\`\``, true);
 
     if (command.cooldown != null)
         embedResponse = embedResponse.addField(`Cooldown:`, `\`\`\`${timeFormatter(command.cooldown)}\`\`\``, true);
 
     if (command.description != null)
-	    embedResponse = embedResponse.addField(`Description:`, `\`\`\`${command.description}\`\`\``, false);
+	    embedResponse = embedResponse.addField(`Descrição:`, `\`\`\`${command.description}\`\`\``, false);
 
     if (command.examples != null)
-	    embedResponse = embedResponse.addField(`Usage examples:`, `\`\`\`${command.examples.join("\n")}\`\`\``, false);
+	    embedResponse = embedResponse.addField(`Exemplos de uso:`, `\`\`\`${command.examples.join("\n")}\`\`\``, false);
 
     if (command.details != null)
-	    embedResponse = embedResponse.addField(`Usage details:`, `\`\`\`${command.details.join("\n")}\`\`\``, false);
+	    embedResponse = embedResponse.addField(`Detalhes de uso:`, `\`\`\`${command.details.join("\n")}\`\`\``, false);
 
 	return embedResponse;
 };
@@ -40,8 +40,8 @@ completeList = (command_list) => {
     let embed = new Discord.MessageEmbed()
     .setColor(0x1d51cc)
     .setAuthor("Bot")
-	.setTitle(`Command help`)
-    .setDescription(`For more details about a specific command, type \`#help <command-name>\`.`);
+	.setTitle(`Ajuda de comando`)
+    .setDescription(`Para mais detalhes sobre um comando específico, digite \`#ajuda <nome-do-comando>\`.`);
 
     for (let category in command_list) {
         embed.addField(`**${category.toUpperCase()}:**`, `${lists[category]}`, false);
@@ -55,13 +55,13 @@ var name = "help";
 // Exports
 module.exports = {
     name: name,
-    category: "General",
-    description: "Provides a list of all available commands or details about a specific command.", 
-    examples: ["#help: Provides a list of all available commands.", 
-    "#help adventure: provides details about the command named 'adventure'."],
+    category: "Geral",
+    description: "Providencia uma lista de todos os comandos disponíveis ou detalhes sobre um comando específico.", 
+    examples: ["#ajuda: Providencia uma lista de todos os comandos disponíveis.", 
+    "#ajuda aventura: providencia detalhes sobre o comando chamado de 'aventura'."],
     min: 0, max: 1, cooldown: 1,
     execute: async (com_args, msg) => {
-        let commandList = {"General":[]};
+        let commandList = {"Geral":[]};
         let requested_command = null;
         const { commands } = msg.client;
 

@@ -1,7 +1,7 @@
 // Exports
-module.exports.invalidArgs = "Sorry, your arguments are invalid! I suggest checking #help...";
-module.exports.invalidPerms = "Hey, I don't think you have permission to use this command!";
-module.exports.longMessage = "Sorry, but your message is too long!";
-module.exports.unidentifiedCommand = "This command doesn't exist...";
-module.exports.unregisteredPlayer = "Hey, you must #register first!";
-module.exports.helpFormatting = (command) => {return {embeds: [require('../commands/help').helpFormatting(command)]}};
+module.exports.invalidArgs = "Desculpa, seus argumentos são inválidos! Sugiro checar #ajuda...";
+module.exports.invalidPerms = "Ei, não acho que você tenha permissão para usar esse comando!";
+module.exports.longMessage = "Desculpa, mas sua mensagem é muito longa!";
+module.exports.unidentifiedCommand = "Esse comando não existe...";
+module.exports.unregisteredPlayer = "Ei, você precisa #registrar primeiro!";
+module.exports.helpFormatting = (command) => {return {embeds: [require('../commands/ajuda').helpFormatting(command)]}};

@@ -5,17 +5,17 @@ const {isValid} = require('../systems/autoDeleter');
 
 // Exports
 module.exports = {
-    name: "adventures", 
-    nicknames: ["advs"],
+    name: "aventuras", 
+    nicknames: ["avts"],
     category: "Battle",
-    description: "Check all available adventures.", 
+    description: "Checa todas aventuras disponíveis.", 
     min: 0, max: 0, cooldown: 5,
     execute: async (com_args, msg) => {
         // Check all adventures
         await db.makeQuery(`SELECT * FROM adventures`).then(async (result) => {
             let embed = new Discord.MessageEmbed()
             .setColor(0x1d51cc)
-            .setTitle("Adventures");
+            .setTitle("Aventuras");
 
             await asyncForEach(result.rows, async (row) => {
                 let minXP = 0, maxXP = 0, minCoins = 0, maxCoins = 0;
@@ -27,7 +27,7 @@ module.exports = {
                         maxXP = xp_result.rows[0].maxxp;
                         minCoins = xp_result.rows[0].mincoins;
                         maxCoins = xp_result.rows[0].maxcoins;
-                        embed = embed.addField(`**${row.title}**`, `XP: ${minXP} per enemy\nCoins: ${minCoins} per enemy\nMinimum Level: ${row.min_level}`, true);
+                        embed = embed.addField(`**${row.title}**`, `XP: ${minXP} por inimigo\nMoedas: ${minCoins} por inimigo\nNível mínimo: ${row.min_level}`, true);
                     }
                 });
             });

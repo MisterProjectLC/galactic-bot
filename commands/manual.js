@@ -4,34 +4,34 @@ const {isValid} = require('../systems/autoDeleter');
 // Exports
 module.exports = {
     name: "manual",
-    category: "General",
-    description: "Explains the battle systems, mechanics and rules.", 
+    category: "Geral",
+    description: "Explica os sistemas, mecânicas e regras de combate.", 
     min: 0, max: 0, cooldown: 5,
     execute: async (com_args, msg) => {
         let embed = new Discord.MessageEmbed()
         .setColor(0x1d51cc)
-        .setTitle("Battle Manual")
-        .addField("Attacking and defending", `Battles occur in turns, with the Side A always going first. Battles may last up to 9 turns - if Turn 9 is reached, Side B immediately wins.
-        Players can only attack an enemy once the previous enemy is defeated. Enemies, on the other hand, hits every player at once with every attack.`, false)
-        .addField("Choosing your arsenal", `Before entering a battle, players must choose two weapons and two armors among their arsenal.`+
-        `To help with this decision, the enemies you'll fight are always shown before combat. Examine your opponents carefully and pick your strategy!`, false)
-        .addField("Attack stats", "Every weapon has two primary stats: damage and attack rate. Damage scales with the weapon's level - the higher the level, " +
-        "the higher the damage. The attack rate, on the other hand, stays fixed. If the attack rate is lower than 1, the weapon must 'charge' before " +
-        "attacking, and so may not attack until their charge adds up to 1.", false)
-        .addField("Defense stats", "There are 5 defense stats in the game: ", false)
-        .addField("Health", "If this hits 0, the player is out of combat. Health increases by 4 every level.", true)
-        .addField("Shields", "Additional health that cannot be healed. They are plentiful, but also more vulnerable to certain effects.", true)
-        .addField("Plate", "Reduces the damage taken from each attack. Also severely reduce the chance of Shock (explained later).", true)
-        .addField("Regen", "Heals the player's health (not shields) every turn.", true)
-        .addField("Evasion", "Chance of avoiding an attack completely. Evasion accumulates every turn, but is divided in half every time the player evades an attack.", true)
-        .addField("Effects", "Some weapons have additional elemental effects with special properties: ", false)
-        .addField("Fire", "Half of this attack's damage ignores Shields and Plate.", true)
-        .addField("Plasma", "Deals double damage against Shields.", true)
-        .addField("Acid", "The defender's Plate is reduced by 1/8 of this attack's damage.", true)
-        .addField("Freeze", "The defender's Evasion is reduced by 1/4 of this attack's damage.", true)
-        .addField("Shock", "This attack's damage divided by the defender's plate equals the chance of stunning the defender, making them lose their attacks (max. 30% chance). Stunned players can still dodge and charge uncharged weapons.", true)
-        .addField("Bio", "Half of this attack's damage heals back the attacker.", true)
-        .addField("Void", "All damage caused by this attack can't be healed back.", true);
+        .setTitle("Manual de combate")
+        .addField("Atacando e defendendo", `Batalhas ocorrem em turnos, com o Lado A sempre indo primeiro. Batalhas podem durar até 9 turnos - se o Turno 9 for alcançado, o Lado B vence imediatamente.
+        Jogadores apenas podem atacar um inimigo quando o inimigo anterior for derrotado. Inimigos, por outro lado, acertam todos os jogadores de uma vez com cada ataque.`, false)
+        .addField("Escolhendo seu arsenal", `Antes de entrar em combate, jogadores precisam escolher duas armas e duas armaduras de seu arsenal.`+
+        `Para ajudar com essa decisão, os inimigos que você vai lutar sempre são mostrados antes do combate. Examine seus oponentes cuidadosamente e escolha sua estratégia!`, false)
+        .addField("Atributos de ataque", "Toda arma tem dois atributos principais: dano e taxa de ataque. Dano aumenta com o nível da arma - quanto maior o nível, " +
+        "maior o dano. A taxa de ataque, por outro lado, é fixa. Se a taxa for menor que 1, a arma precisa 'carregar' antes de " +
+        "atacar, e por isso pode não atacar até sua carga acumular até 1.", false)
+        .addField("Atributos de defesa", "Existem 5 atributos de defesa no jogo: ", false)
+        .addField("Vida", "Se isto bater 0, o jogador sai do combate. Vida aumenta em 4 todo nível.", true)
+        .addField("Escudos", "Vida adicional que não pode ser curada. Escudos são maiores, porém mais vulneráveis contra certos tipos de ataque.", true)
+        .addField("Placa", "Reduz o dano recebido de cada ataque. Também reduz consideravelmente a chance de Choque (explicado depois).", true)
+        .addField("Regen", "Cura a Vida (não os Escudos) do jogador todo turno.", true)
+        .addField("Evasão", "Chance de evitar um ataque completamente. Evasão é acumulada todo turno, mas divide pela metade toda vez que o jogador se esquivar de um ataque.", true)
+        .addField("Efeitos", "Algumas armas possuem efeitos elementais adicionais com propriedades especiais: ", false)
+        .addField("Fogo", "Metade do dano deste ataque ignora Escudos e Placa.", true)
+        .addField("Plasma", "Causa dano dobrado contra Escudos.", true)
+        .addField("Ácido", "A Placa do defensor é reduzida em 1/8 do dano deste ataque.", true)
+        .addField("Gelo", "A evasão do defensor é reduzida em 1/4 do dano deste ataque.", true)
+        .addField("Shock", "O dano deste ataque divido pela Placa do defensor é igual a chance de atordoar o defensor, fazendo com que ele perca seus ataques (chance max. 30%). Combatentes atordoados ainda podem esquivar e carregar armas não-carregadas.", true)
+        .addField("Bio", "Metade do dano deste ataque recupera a vida do atacante.", true)
+        .addField("Vazio", "Todo dano causado por este ataque não pode ser curado.", true);
 
 
         msg.reply({embeds: [embed]});

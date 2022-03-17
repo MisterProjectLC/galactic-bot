@@ -12,27 +12,27 @@ const {timeFormatter} = require('../utils/timeFormatter');
 
 // Exports
 module.exports = {
-    name: "conquest", 
-    nickname: ["adv"],
-    category: "Battle",
-    description: "Take part in a conquest - basically a harder and more intensive adventure. Requires a #party.",
-    examples: ["#conquest Andor: Take part in the 'Andor' mission."],
-    details: ['Check the list of conquests with #conquests.'],
-    min: 0, max: 5, cooldown: 30, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
+    name: "conquista", 
+    nickname: ["conq"],
+    category: "Batalha",
+    description: "Participa em uma conquista - uma aventura contra um chefão. Requer uma #equipe.",
+    examples: ["#conquista Andor: Participa na missão 'Andor'."],
+    details: ['Veja a lista de conquistas com #conquistas.'],
+    min: 0, max: 5, cooldown: 30, cooldownMessage: 'A espaçonave está enchendo o tanque, espere xxx antes de começar outra missão.',
     execute: async (com_args, msg) => {
         let bestMatch = {};
         let bestScore = 0;
 
         let partyMsg = party.findPartyMessage(msg.author.id);
         if (partyMsg === null) {
-            msg.reply("You aren't hosting a party!");
+            msg.reply("Você não está liderando uma equipe!");
             cooldownControl.resetCooldown(module.exports, msg.author.id);
             return;
         }
         let partyMembers = saved_messages.get_message('party', partyMsg.id).members;
 
 
-        let m = await msg.reply("Loading...");
+        let m = await msg.reply("Carregando...");
         await db.makeQuery(`SELECT * FROM conquests`).then((result) => {
             result.rows.forEach(row => {
                 let lower_arg = com_args.join(" ").toLowerCase();
@@ -54,7 +54,7 @@ module.exports = {
 
         if (partyMembers.length < bestMatch.min_size) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply("Your party doesn't have enough players for this conquest...");
+            msg.reply("Sua equipe não tem jogadores suficientes para esta conquista...");
             return;
         }
 
@@ -73,7 +73,7 @@ module.exports = {
 
             if (result.rows[i].level < bestMatch.min_level) {
                 cooldownControl.resetCooldown(module.exports, msg.author.id);
-                msg.reply(`You don't have enough levels to host this conquest...`);
+                msg.reply(`Você não possui níveis suficientes para liderar esta conquista...`);
                 return;
             }
         }
@@ -81,7 +81,7 @@ module.exports = {
         let endit = false;
         await asyncForEach(players, async player => {
             if (player.bosses_left < 1) {
-                msg.channel.send(`${player.title} is out of conquests right now! Wait ${timeFormatter(await getTimeLeft("bosses"))} before going on a conquest again.`);
+                msg.channel.send(`${player.title} não possui cargas de conquistas! Espere ${timeFormatter(await getTimeLeft("bosses"))} antes de ir em outra conquista.`);
                 if (endit)
                     return;
 
@@ -94,7 +94,7 @@ module.exports = {
             return;
 
         await asyncForEach(players, async player => {
-            msg.channel.send(`<@${player.userid}>, Conquests left: ${player.bosses_left-1}/${constants.bossesMax}. Next regeneration in ${timeFormatter(await getTimeLeft("bosses"))}.`);
+            msg.channel.send(`<@${player.userid}>, Conquistas sobrando: ${player.bosses_left-1}/${constants.bossesMax}. Próxima regeneração em ${timeFormatter(await getTimeLeft("bosses"))}.`);
             db.makeQuery(`UPDATE players SET bosses_left = bosses_left - 1 WHERE userid = $1`, [player.userid]);
         });
 

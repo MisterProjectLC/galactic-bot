@@ -9,18 +9,18 @@ const {timeFormatter} = require('../utils/timeFormatter');
 
 // Exports
 module.exports = {
-    name: "adventure", 
-    nicknames: ["adv"],
+    name: "aventura", 
+    nicknames: ["avt"],
     category: "Battle",
-    description: "Take part in an adventure.",
-    examples: ["#adventure Space Adventure: Take part in the 'Space Adventure' mission."],
-    details: ['Check the list of adventures with #adventures.'],
-    min: 0, max: 5, cooldown: 300, cooldownMessage: 'The spacecraft is loading fuel, wait xxx before starting the mission again.',
+    description: "Participa em uma aventura.",
+    examples: ["#aventura Aventura no Espaço: Participa na missão 'Aventura no Espaço'."],
+    details: ['Veja a lista de aventuras com #aventuras.'],
+    min: 0, max: 5, cooldown: 300, cooldownMessage: 'A espaçonave está enchendo o tanque, espere xxx antes de começar outra missão.',
     execute: async (com_args, msg) => {
         let bestMatch = [];
         let bestScore = 0;
 
-        let m = await msg.reply("Loading...");
+        let m = await msg.reply("Carregando...");
         await db.makeQuery(`SELECT * FROM adventures`).then((result) => {
             result.rows.forEach(row => {
                 let lowerArg = com_args.join(" ").toLowerCase();
@@ -51,16 +51,16 @@ module.exports = {
 
         if (player.level < bestMatch.min_level) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply("You don't have enough levels to participate in this adventure...");
+            msg.reply("Você não tem níveis o suficiente para participar desta aventura...");
             return;
         }
 
         if (player.adventures_left < 1) {
             cooldownControl.resetCooldown(module.exports, msg.author.id);
-            msg.reply(`You are out of adventures right now! Wait ${timeFormatter(await getTimeLeft("adventures"))} before going on an adventure again.`);
+            msg.reply(`Você não tem mais cargas de aventura! Espere ${timeFormatter(await getTimeLeft("adventures"))} antes de ir em uma aventura.`);
             return;
         } else {
-            msg.reply(`Adventures left: ${player.adventures_left-1}/${constants.adventuresMax}. Next regeneration in ${timeFormatter(await getTimeLeft("adventures"))}.`);
+            msg.reply(`Adventuras sobrando: ${player.adventures_left-1}/${constants.adventuresMax}. Próxima regeneração em ${timeFormatter(await getTimeLeft("adventures"))}.`);
             db.makeQuery(`UPDATE players SET adventures_left = adventures_left - 1 WHERE userid = $1`, [msg.author.id]);
         }
 

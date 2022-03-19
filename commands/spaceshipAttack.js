@@ -106,7 +106,7 @@ module.exports = {
             return;
 
         // Start battle
-        if (pkg.members.length == BATTLE_SIZE) {
+        if (pkg.members.length >= BATTLE_SIZE) {
             deleteMessage(msg, 'defenseParty');
             let result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
             WHERE enemiesAdventures.adventure_id = $1`, [pkg.adventure.id]);

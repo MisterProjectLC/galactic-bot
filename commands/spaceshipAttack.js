@@ -106,7 +106,7 @@ module.exports = {
             return;
 
         // Start battle
-        if (pkg.members.length == BATTLE_SIZE) {
+        if (pkg.members.length >= BATTLE_SIZE) {
             deleteMessage(msg, 'defenseParty');
             let result = await db.makeQuery(`SELECT * FROM eEnemies JOIN enemiesAdventures ON eEnemies.id = enemiesAdventures.enemy_id 
             WHERE enemiesAdventures.adventure_id = $1`, [pkg.adventure.id]);
@@ -119,7 +119,6 @@ module.exports = {
         
         // Update
         else {
-            console.log("Update");
             let result = await db.makeQuery('SELECT title, userid FROM players WHERE userid = ANY($1)', [pkg.members]);
             msg.edit({embeds: [await createPartyEmbed(pkg.members, result.rows, BATTLE_SIZE, pkg.adventure.min_level )] });
             saved_messages.add_message('defenseParty', msg.id, pkg);

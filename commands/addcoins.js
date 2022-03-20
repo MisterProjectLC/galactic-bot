@@ -14,13 +14,10 @@ module.exports = {
     execute: async (com_args, msg) => {
         // Gifted
         let giftedID = getUserIDFromMention(com_args[0]);
-        if (giftedID === null) {
-            msg.reply("Couldn't find the mentioned player...");
-            msg.reply(errors.helpFormatting(module.exports));
-            return;
-        }
-
-        let gifted = await db.makeQuery(`SELECT * FROM players WHERE $1 ILIKE userID`, [giftedID]);
+        if (giftedID === null)
+            giftedID = com_args[0];
+        
+        let gifted = await db.makeQuery(`SELECT userid FROM players WHERE $1 ILIKE userid`, [giftedID]);
         if (gifted.rowCount < 1) {
             msg.reply("Couldn't find the mentioned player...");
             return;
